@@ -78,14 +78,22 @@ The same, but appending to an existing passfile:
 $ zbarimg -q --raw google-qrcode.png | pass otp append google/example@gmail.com
 ```
 
-If you have a clipboard management console tool such as `wl-clipboard` for
-Wayland installed, you can also select "Copy Image" in your favorite browser
-and run:
+You can also select "Copy Image" in your favorite browser or take a
+screenshot of the QR code and run:
 
-```
-$ wl-paste | zbarimg -q --raw - | pass otp append google/example@gmail.com
-```
-Instead of `wl-paste` you can use `pngpaste -` on MacOS
+* With Wayland:
+
+  ```
+  $ wl-paste | zbarimg -q --raw - | pass otp append google/example@gmail.com
+  ```
+
+* With X11:
+
+  ```
+  $ xclip -selection clipboard -o -target image/png | zbarimg -q --raw - | pass otp append google/example@gmail.com
+  ```
+
+* On MacOS, use `pngpaste -`
 
 Generate a 2FA code using this token:
 
