@@ -30,6 +30,16 @@ test_expect_success 'Generates HOTP code and increments counter' '
   [[ $("$PASS" otp uri passfile) == "$inc" ]]
 '
 
+test_expect_success 'Increments HOTP counter when it is the first parameter' '
+  uri="otpauth://hotp/Example:alice@google.com?counter=10&secret=JBSWY3DPEHPK3PXP&issuer=Example"
+  inc="otpauth://hotp/Example:alice@google.com?counter=11&secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+  test_pass_init &&
+  "$PASS" otp insert passfile <<< "$uri" &&
+  "$PASS" otp passfile &&
+  [[ $("$PASS" otp uri passfile) == "$inc" ]]
+'
+
 test_expect_success 'Generates HOTP code quietly' '
   uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10&issuer=Example"
   inc="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=11&issuer=Example"
