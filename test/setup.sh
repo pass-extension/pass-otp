@@ -35,7 +35,8 @@ if [[ "$COVERAGE" == true ]]; then
 	[[ -e "$KCOV" ]] || _die "Could not find kcov command"
 	mkdir -p "$TMP"
 	_pass() {
-		"$KCOV" --include-path="$PROJECT_HOME/otp.bash" --exclude-path=/ \
+		"$KCOV" --bash-dont-parse-binary-dir \
+			--include-path="$PROJECT_HOME/otp.bash" --exclude-path=/ \
 			"$TMP/$(basename "$0")" "$PASS" "${@}"
 	}
 else
