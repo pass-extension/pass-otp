@@ -1,16 +1,32 @@
-name: CI
-on:
-  workflow_dispatch:
-  pull_request:
+name: Ubuntu
+
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: nixbuild/nix-quick-install-action@v9
+
+      - name: Check out repository code
+        uses: actions/checkout@v7
         with:
-          nix_version: 2.4
-          nix_conf: experimental-features = nix-command flakes
-      - name: nix build
-        run: nix -L build .#
+          persist-credentials: false
+
+      - name: Shellcheck
+        run: make lint
+
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pass oathtool expect
+
+      - name: Run the tests
+        run: make test

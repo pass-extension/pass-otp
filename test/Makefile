@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/ .
 
-SHELL ?= /bin/bash
-SHELL_PATH ?= $(SHELL)
+SHELL_PATH ?= bash
 SHELL_PATH_SQ = $(subst ','\'',$(SHELL_PATH))
 RM ?= rm -f
 PROVE ?= prove
