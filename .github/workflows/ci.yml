@@ -26,7 +26,17 @@ jobs:
       - name: Install required packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pass oathtool expect
+          sudo apt-get install -y --no-install-recommends pass oathtool expect kcov jq
 
       - name: Run the tests
-        run: make test
+        shell: bash
+        run: make test | tee "$RUNNER_TEMP/results.txt"
+
+      - name: Coverage summary
+        run: |
+          {
+            echo '### Test results'
+            echo '```'
+            grep -E '^(coverage|fixed|success|failed|broken|total)' "$RUNNER_TEMP/results.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
