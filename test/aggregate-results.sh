@@ -1,19 +1,23 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# pass otp - Password Store Extension (https://www.passwordstore.org/)
+# Copyright (C) 2008-2012 Git project
+# Copyright (C) 2017-2026 Alexandre PUJOL <alexandre@pujol.io>.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Copyright (c) 2008-2012 Git project
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see http://www.gnu.org/licenses/ .
+# Must be run from test/ after the test scripts.
+
+# shellcheck disable=SC2094
+
+_die() { echo "${@}" && exit 1; }
+if [[ "$COVERAGE" == true ]]; then
+	KCOV="$(command -v kcov)"
+	[[ -e "$KCOV" ]] || _die "Could not find kcov command"
+	mapfile -t COVERED < <(find "$TMP" -mindepth 1 -maxdepth 1 -type d -name '*.t')
+	[[ ${#COVERED[@]} -gt 0 ]] || _die "No coverage data found in $TMP"
+	"$KCOV" --merge "$TMP/kcov" "${COVERED[@]}"
+	covered="$(jq -r '.percent_covered' "$TMP/kcov/kcov-merged/coverage.json")"
+	printf "%s: %s%%\n" coverage "$covered"
+fi
 
 failed_tests=
 fixed=0
@@ -21,8 +25,7 @@ success=0
 failed=0
 broken=0
 total=0
-
-while read -r file; do
+for file in test-results/*.counts; do
 	while read -r type value; do
 		case $type in
 		'')
@@ -47,11 +50,14 @@ while read -r file; do
 done
 
 if test -n "$failed_tests"; then
-	printf '\nfailed test(s):%s\n\n' "$failed_tests"
+	printf "\nfailed test(s):%s\n\n" "$failed_tests"
 fi
 
-printf '%-8s%d\n' fixed $fixed
-printf '%-8s%d\n' success $success
-printf '%-8s%d\n' failed $failed
-printf '%-8s%d\n' broken $broken
-printf '%-8s%d\n' total $total
+printf "%-8s%d\n" fixed "$fixed"
+printf "%-8s%d\n" success "$success"
+printf "%-8s%d\n" failed "$failed"
+printf "%-8s%d\n" broken "$broken"
+printf "%-8s%d\n" total "$total"
+
+# Fail the build on test failure
+[[ "$failed" -eq 0 ]]
