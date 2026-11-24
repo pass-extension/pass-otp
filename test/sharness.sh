@@ -3,6 +3,7 @@
 # Copyright (c) 2011-2012 Mathias Lafeldt
 # Copyright (c) 2005-2012 Git project
 # Copyright (c) 2005-2012 Junio C Hamano
+# Copyright (c) 2019-2023 Felipe Contreras
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,45 +18,45 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/ .
 
+if test -n "${ZSH_VERSION-}"
+then
+	# shellcheck disable=SC2296
+	SHARNESS_SOURCE=${(%):-%x}
+	emulate sh -o POSIX_ARGZERO
+else
+	# shellcheck disable=SC3028
+	SHARNESS_SOURCE=${BASH_SOURCE-$0}
+fi
+
 # Public: Current version of Sharness.
-SHARNESS_VERSION="1.1.0"
+SHARNESS_VERSION="1.2.1"
 export SHARNESS_VERSION
 
 : "${SHARNESS_TEST_EXTENSION:=t}"
 # Public: The file extension for tests.  By default, it is set to "t".
 export SHARNESS_TEST_EXTENSION
 
-if test -z "$SHARNESS_TEST_DIRECTORY"
-then
-	SHARNESS_TEST_DIRECTORY=$(pwd)
-else
-	# ensure that SHARNESS_TEST_DIRECTORY is an absolute path so that it
-	# is valid even if the current working directory is changed
-	SHARNESS_TEST_DIRECTORY=$(cd "$SHARNESS_TEST_DIRECTORY" && pwd) || exit 1
-fi
+: "${SHARNESS_TEST_DIRECTORY:=$(dirname "$0")}"
+# ensure that SHARNESS_TEST_DIRECTORY is an absolute path so that it
+# is valid even if the current working directory is changed
+SHARNESS_TEST_DIRECTORY=$(cd "$SHARNESS_TEST_DIRECTORY" && pwd) || exit 1
 # Public: Root directory containing tests. Tests can override this variable,
 # e.g. for testing Sharness itself.
 export SHARNESS_TEST_DIRECTORY
 
-: "${SHARNESS_TEST_SRCDIR:=$(cd "$(dirname "$0")" && pwd)}"
+: "${SHARNESS_TEST_SRCDIR:=$(cd "$(dirname "$SHARNESS_SOURCE")" && pwd)}"
 # Public: Source directory of test code and sharness library.
 # This directory may be different from the directory in which tests are
 # being run.
 export SHARNESS_TEST_SRCDIR
 
-if test -z "$SHARNESS_TEST_OUTDIR"
-then
-	# Similarly, override this to store the test-results subdir
-	# elsewhere
-	SHARNESS_TEST_OUTDIR=$SHARNESS_TEST_DIRECTORY
-fi
-
+: "${SHARNESS_TEST_OUTDIR:=$SHARNESS_TEST_DIRECTORY}"
 # Public: Directory where the output of the tests should be stored (i.e.
 # trash directories).
 export SHARNESS_TEST_OUTDIR
 
 #  Reset TERM to original terminal if found, otherwise save original TERM
-[ "x" = "x$SHARNESS_ORIG_TERM" ] &&
+[ -z "$SHARNESS_ORIG_TERM" ] &&
 		SHARNESS_ORIG_TERM="$TERM" ||
 		TERM="$SHARNESS_ORIG_TERM"
 # Public: The unsanitized TERM under which sharness is originally run
@@ -294,7 +295,10 @@ test_fixed=0
 test_broken=0
 test_success=0
 
-. "$SHARNESS_TEST_SRCDIR/lib-sharness/functions.sh"
+if test -e "$SHARNESS_TEST_SRCDIR/lib-sharness/functions.sh"
+then
+	. "$SHARNESS_TEST_SRCDIR/lib-sharness/functions.sh"
+fi
 
 # You are not expected to call test_ok_ and test_failure_ directly, use
 # the text_expect_* functions instead.
@@ -423,6 +427,7 @@ test_skip_() {
 	SHARNESS_TEST_NB=$((SHARNESS_TEST_NB + 1))
 	to_skip=
 	for skp in $SKIP_TESTS; do
+		# shellcheck disable=SC2254
 		case $this_test.$SHARNESS_TEST_NB in
 		$skp)
 			to_skip=t
@@ -449,6 +454,216 @@ test_skip_() {
 	esac
 }
 
+remove_trash_() {
+	test -d "$remove_trash" && (
+		cd "$(dirname "$remove_trash")" &&
+			rm -rf "$(basename "$remove_trash")"
+	)
+}
+
+# Public: Run test commands and expect them to succeed.
+#
+# When the test passed, an "ok" message is printed and the number of successful
+# tests is incremented. When it failed, a "not ok" message is printed and the
+# number of failed tests is incremented.
+#
+# With --immediate, exit test immediately upon the first failed test.
+#
+# Usually takes two arguments:
+# $1 - Test description
+# $2 - Commands to be executed.
+#
+# With three arguments, the first will be taken to be a prerequisite:
+# $1 - Comma-separated list of test prerequisites. The test will be skipped if
+#      not all of the given prerequisites are set. To negate a prerequisite,
+#      put a "!" in front of it.
+# $2 - Test description
+# $3 - Commands to be executed.
+#
+# Examples
+#
+#   test_expect_success \
+#       'git-write-tree should be able to write an empty tree.' \
+#       'tree=$(git-write-tree)'
+#
+#   # Test depending on one prerequisite.
+#   test_expect_success TTY 'git --paginate rev-list uses a pager' \
+#       ' ... '
+#
+#   # Multiple prerequisites are separated by a comma.
+#   test_expect_success PERL,PYTHON 'yo dawg' \
+#       ' test $(perl -E 'print eval "1 +" . qx[python -c "print 2"]') == "4" '
+#
+# Returns nothing.
+test_expect_success() {
+	test "$#" = 3 && { test_prereq=$1; shift; } || test_prereq=
+	test "$#" = 2 || error "bug in the test script: not 2 or 3 parameters to test_expect_success"
+	export test_prereq
+	if ! test_skip_ "$@"; then
+		say >&3 "expecting success: $2"
+		if test_run_ "$2"; then
+			test_ok_ "$1"
+		else
+			test_failure_ "$@"
+		fi
+	fi
+	echo >&3 ""
+}
+
+# Public: Run test commands and expect them to fail. Used to demonstrate a known
+# breakage.
+#
+# This is NOT the opposite of test_expect_success, but rather used to mark a
+# test that demonstrates a known breakage.
+#
+# When the test passed, an "ok" message is printed and the number of fixed tests
+# is incremented. When it failed, a "not ok" message is printed and the number
+# of tests still broken is incremented.
+#
+# Failures from these tests won't cause --immediate to stop.
+#
+# Usually takes two arguments:
+# $1 - Test description
+# $2 - Commands to be executed.
+#
+# With three arguments, the first will be taken to be a prerequisite:
+# $1 - Comma-separated list of test prerequisites. The test will be skipped if
+#      not all of the given prerequisites are set. To negate a prerequisite,
+#      put a "!" in front of it.
+# $2 - Test description
+# $3 - Commands to be executed.
+#
+# Returns nothing.
+test_expect_failure() {
+	test "$#" = 3 && { test_prereq=$1; shift; } || test_prereq=
+	test "$#" = 2 || error "bug in the test script: not 2 or 3 parameters to test_expect_failure"
+	export test_prereq
+	if ! test_skip_ "$@"; then
+		say >&3 "checking known breakage: $2"
+		if test_run_ "$2" expecting_failure; then
+			test_known_broken_ok_ "$1"
+		else
+			test_known_broken_failure_ "$1"
+		fi
+	fi
+	echo >&3 ""
+}
+
+# Public: Run test commands and expect anything from them. Used when a
+# test is not stable or not finished for some reason.
+#
+# When the test passed, an "ok" message is printed, but the number of
+# fixed tests is not incremented.
+#
+# When it failed, a "not ok ... # TODO known breakage" message is
+# printed, and the number of tests still broken is incremented.
+#
+# Failures from these tests won't cause --immediate to stop.
+#
+# Usually takes two arguments:
+# $1 - Test description
+# $2 - Commands to be executed.
+#
+# With three arguments, the first will be taken to be a prerequisite:
+# $1 - Comma-separated list of test prerequisites. The test will be skipped if
+#      not all of the given prerequisites are set. To negate a prerequisite,
+#      put a "!" in front of it.
+# $2 - Test description
+# $3 - Commands to be executed.
+#
+# Returns nothing.
+test_expect_unstable() {
+	test "$#" = 3 && { test_prereq=$1; shift; } || test_prereq=
+	test "$#" = 2 || error "bug in the test script: not 2 or 3 parameters to test_expect_unstable"
+	export test_prereq
+	if ! test_skip_ "$@"; then
+		say >&3 "checking unstable test: $2"
+		if test_run_ "$2" unstable; then
+			test_ok_ "$1"
+		else
+			test_known_broken_failure_ "$1"
+		fi
+	fi
+	echo >&3 ""
+}
+
+# Public: Summarize test results and exit with an appropriate error code.
+#
+# Must be called at the end of each test script.
+#
+# Can also be used to stop tests early and skip all remaining tests. For this,
+# set skip_all to a string explaining why the tests were skipped before calling
+# test_done.
+#
+# Examples
+#
+#   # Each test script must call test_done at the end.
+#   test_done
+#
+#   # Skip all remaining tests if prerequisite is not set.
+#   if ! test_have_prereq PERL; then
+#       skip_all='skipping perl interface tests, perl not available'
+#       test_done
+#   fi
+#
+# Returns 0 if all tests passed or 1 if there was a failure.
+# shellcheck disable=SC2154,SC2034
+test_done() {
+	EXIT_OK=t
+
+	if test -z "$HARNESS_ACTIVE"; then
+		test_results_dir="$SHARNESS_TEST_OUTDIR/test-results"
+		mkdir -p "$test_results_dir"
+		test_results_path="$test_results_dir/$this_test.$$.counts"
+
+		cat >>"$test_results_path" <<-EOF
+		total $SHARNESS_TEST_NB
+		success $test_success
+		fixed $test_fixed
+		broken $test_broken
+		failed $test_failure
+
+		EOF
+	fi
+
+	if test "$test_fixed" != 0; then
+		say_color error "# $test_fixed known breakage(s) vanished; please update test(s)"
+	fi
+	if test "$test_broken" != 0; then
+		say_color warn "# still have $test_broken known breakage(s)"
+	fi
+	if test "$test_broken" != 0 || test "$test_fixed" != 0; then
+		test_remaining=$((SHARNESS_TEST_NB - test_broken - test_fixed))
+		msg="remaining $test_remaining test(s)"
+	else
+		test_remaining=$SHARNESS_TEST_NB
+		msg="$SHARNESS_TEST_NB test(s)"
+	fi
+
+	case "$test_failure" in
+	0)
+		# Maybe print SKIP message
+		check_skip_all_
+		if test "$test_remaining" -gt 0; then
+			say_color pass "# passed all $msg"
+		fi
+		say "1..$SHARNESS_TEST_NB$skip_all"
+
+		test_eval_ "$final_cleanup"
+
+		remove_trash_
+
+		exit 0 ;;
+
+	*)
+		say_color error "# failed $test_failure among $msg"
+		say "1..$SHARNESS_TEST_NB"
+
+		exit 1 ;;
+
+	esac
+}
+
 : "${SHARNESS_BUILD_DIRECTORY:="$SHARNESS_TEST_DIRECTORY/.."}"
 # Public: Build directory that will be added to PATH. By default, it is set to
 # the parent directory of SHARNESS_TEST_DIRECTORY.
@@ -459,13 +674,6 @@ export PATH
 # Public: Path to test script currently executed.
 SHARNESS_TEST_FILE="$0"
 export SHARNESS_TEST_FILE
-
-remove_trash_() {
-	test -d "$remove_trash" && (
-		cd "$(dirname "$remove_trash")" &&
-			rm -rf "$(basename "$remove_trash")"
-	)
-}
 
 # Prepare test area.
 SHARNESS_TRASH_DIRECTORY="trash directory.$(basename "$SHARNESS_TEST_FILE" ".$SHARNESS_TEST_EXTENSION")"
@@ -483,11 +691,11 @@ rm -rf "$SHARNESS_TRASH_DIRECTORY" || {
 
 
 #
-#  Load any extensions in $srcdir/sharness.d/*.sh
+#  Load any extensions in $testdir/sharness.d/*.sh
 #
-if test -d "${SHARNESS_TEST_SRCDIR}/sharness.d"
+if test -d "${SHARNESS_TEST_DIRECTORY}/sharness.d"
 then
-	for file in "${SHARNESS_TEST_SRCDIR}"/sharness.d/*.sh
+	for file in "${SHARNESS_TEST_DIRECTORY}"/sharness.d/*.sh
 	do
 		# Ensure glob was not an empty match:
 		test -e "${file}" || break
@@ -496,6 +704,7 @@ then
 		then
 			echo >&5 "sharness: loading extensions from ${file}"
 		fi
+		# shellcheck disable=SC1090
 		. "${file}"
 		if test $? != 0
 		then
@@ -512,6 +721,12 @@ export SHARNESS_TRASH_DIRECTORY
 HOME="$SHARNESS_TRASH_DIRECTORY"
 export HOME
 
+# shellcheck disable=SC3028
+if [ "$OSTYPE" = msys ]; then
+	USERPROFILE="$SHARNESS_TRASH_DIRECTORY"
+	export USERPROFILE
+fi
+
 mkdir -p "$SHARNESS_TRASH_DIRECTORY" || exit 1
 # Use -P to resolve symlinks in our working directory so that the cwd
 # in subprocesses like git equals our $PWD (for pathname comparisons).
@@ -525,8 +740,9 @@ check_skip_all_() {
 }
 
 this_test=${SHARNESS_TEST_FILE##*/}
-this_test=${this_test%.$SHARNESS_TEST_EXTENSION}
+this_test=${this_test%".$SHARNESS_TEST_EXTENSION"}
 for skp in $SKIP_TESTS; do
+	# shellcheck disable=SC2254
 	case "$this_test" in
 	$skp)
 		say_color info >&3 "skipping test $this_test altogether"
