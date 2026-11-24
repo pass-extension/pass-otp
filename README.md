@@ -1,12 +1,8 @@
-| Branch | Status |
-|--------|--------|
-| [**master**](https://github.com/tadfisher/pass-otp/tree/master) | [![Build Status: master](https://travis-ci.org/tadfisher/pass-otp.svg?branch=master)](https://travis-ci.org/tadfisher/pass-otp) |
-| [**develop**](https://github.com/tadfisher/pass-otp/tree/develop) | [![Build Status: develop](https://travis-ci.org/tadfisher/pass-otp.svg?branch=develop)](https://travis-ci.org/tadfisher/pass-otp) |
-
 # pass-otp
 
-A [pass](https://www.passwordstore.org/) extension for managing
-one-time-password (OTP) tokens.
+[![][workflow]][action] [![][release]][release-link]
+
+**A [pass] extension for managing one-time-password (OTP) tokens.**
 
 ## Usage
 
@@ -297,3 +293,12 @@ mantra. Please think it through before running this migration.
 
 If you read the warning paragraph above, [keep calm and move on with the
 migration](https://github.com/tadfisher/pass-otp/wiki/How-to-migrate-your-Google-Authenticator-database-to-pass-otp%3F).
+
+[github-link]: https://github.com/pass-extension/pass-otp
+[workflow]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fpass-extension%2Fpass-otp%2Fbadge%3Fref%3Ddevelop&style=flat-square
+[action]: https://actions-badge.atrox.dev/pass-extension/pass-otp/goto?ref=develop
+[release]: https://img.shields.io/github/release/pass-extension/pass-otp.svg?maxAge=600&style=flat-square
+[release-link]: https://github.com/pass-extension/pass-otp/releases/latest
+[repology-link]: https://repology.org/project/pass-otp/versions
+
+[pass]: https://www.passwordstore.org/
