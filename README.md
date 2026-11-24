@@ -93,6 +93,8 @@ screenshot of the QR code and run:
   $ xclip -selection clipboard -o -target image/png | zbarimg -q --raw - | pass otp append google/example@gmail.com
   ```
 
+* On MacOS, use `pngpaste -`
+
 Generate a 2FA code using this token:
 
 ```
@@ -151,6 +153,12 @@ $ PREFIX=$XDG_DATA_HOME \
     make install
 ```
 
+To use with [passage](https://github.com/FiloSottile/passage), set the variable `SYSTEM_EXTENSION_DIR` to one of passage’s extensions directories (by default `$HOME/.local/share/passage/extensions` and `/usr/lib/passage/extensions`) when installing:
+
+```
+sudo make install SYSTEM_EXTENSION_DIR=/usr/lib/passage/extensions
+```
+
 ### Arch Linux
 
 `pass-otp` is available in the `[community]` repository:
@@ -164,12 +172,12 @@ pacman -S pass-otp
 `pass-otp` is available in `buster` and `sid` repositories with the package-name `pass-extension-otp` according to [tracker](https://tracker.debian.org/pkg/pass-otp):
 
 ```
-apt install pass-extension-otp
+apt install pass-otp
 ```
 
 ### Fedora
 
-`pass-otp` is available in Fedora 28 and up, under the package name `pass-otp` according to [Fedora Apps](https://apps.fedoraproject.org/packages/pass-otp).
+`pass-otp` is available in Fedora 28 and up, under the package name `pass-otp` according to [Fedora Apps](https://packages.fedoraproject.org/pkgs/pass-otp/).
 
 ```
 dnf install pass-otp
@@ -190,7 +198,7 @@ with pkgs;
 pass.withExtensions (exts: [ exts.pass-otp ])
 ```
 
-The above can be installed imperatively via `nix-env` or ran in a temprorary
+The above can be installed imperatively via `nix-env` or ran in a temporary
 environment via `nix-shell`.
 
 ### macOS

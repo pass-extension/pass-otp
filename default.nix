@@ -33,7 +33,7 @@ stdenv.mkDerivation {
   doCheck = true;
 
   patchPhase = ''
-    sed -i -e 's|OATH=\$(which oathtool)|OATH=${oathToolkit}/bin/oathtool|' otp.bash
+    sed -i -e 's|OATH=\$(command -v oathtool)|OATH=${oathToolkit}/bin/oathtool|' otp.bash
   '';
 
   checkPhase = ''
