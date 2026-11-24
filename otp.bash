@@ -131,7 +131,7 @@ otp_read_secret() {
       read -r secret
   fi
 
-  secret="$(echo "${secret}"|tr "[:lower:]" "[:upper:]"|tr -d ' ')"
+  secret=$(printf '%s' "${secret//[[:space:]]/}" | tr '[:lower:]' '[:upper:]')
   uri="otpauth://totp/${issuer}${separator}${accountname}?secret=${secret}"
   [ -n "$issuer" ] && uri="${uri}&issuer=${issuer}"
   otp_parse_uri "$uri"
