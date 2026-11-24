@@ -8,16 +8,16 @@ test_expect_success 'Shows key URI in single-line passfile' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert passfile <<< "$uri" &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  _pass otp insert passfile <<< "$uri" &&
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_expect_success 'Shows key URI in multi-line passfile' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" insert -m passfile < <(echo -e "password\nfoo\n$uri\nbar") &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  _pass insert -m passfile < <(echo -e "password\nfoo\n$uri\nbar") &&
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_done

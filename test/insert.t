@@ -8,8 +8,8 @@ test_expect_success 'Reads non-terminal input' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert passfile <<< "$uri" &&
-  [[ $("$PASS" show passfile) == "$uri" ]]
+  _pass otp insert passfile <<< "$uri" &&
+  [[ $(_pass show passfile) == "$uri" ]]
 '
 
 test_expect_success 'Reads terminal input in noecho mode' '
@@ -30,7 +30,7 @@ test_expect_success 'Reads terminal input in noecho mode' '
       eof
     }
 EOD
-  [[ $("$PASS" show passfile) == "$uri" ]]
+  [[ $(_pass show passfile) == "$uri" ]]
 '
 
 test_expect_success 'Reads terminal input in echo mode' '
@@ -47,7 +47,7 @@ test_expect_success 'Reads terminal input in echo mode' '
       eof
     }
 EOD
-  [[ $("$PASS" show passfile) == "$uri" ]]
+  [[ $(_pass show passfile) == "$uri" ]]
 '
 
 test_expect_success 'Prompts before overwriting key URI' '
@@ -55,7 +55,7 @@ test_expect_success 'Prompts before overwriting key URI' '
   uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
   test_pass_init
-  "$PASS" otp insert passfile <<< "$uri1" || return 1
+  _pass otp insert passfile <<< "$uri1" || return 1
   expect <<EOD
     spawn "$PASS" otp insert -e passfile
     expect {
@@ -70,15 +70,15 @@ test_expect_success 'Prompts before overwriting key URI' '
       eof
     }
 EOD
-  [[ $("$PASS" show passfile) == "$uri1" ]]
+  [[ $(_pass show passfile) == "$uri1" ]]
 '
 
 test_expect_success 'Generates default pass-name from label' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init
-  "$PASS" otp insert <<< "$uri"
-  [[ $("$PASS" show "Example/alice@google.com") == "$uri" ]]
+  _pass otp insert <<< "$uri"
+  [[ $(_pass show "Example/alice@google.com") == "$uri" ]]
 '
 
 test_expect_success 'Prompts when inserting default pass-name from terminal' '
@@ -99,7 +99,7 @@ test_expect_success 'Prompts when inserting default pass-name from terminal' '
       eof
     }
 EOD
-  [[ $("$PASS" show "Example/alice@google.com") == "$uri" ]]
+  [[ $(_pass show "Example/alice@google.com") == "$uri" ]]
 '
 
 test_expect_success 'Force overwrites key URI' '
@@ -107,9 +107,9 @@ test_expect_success 'Force overwrites key URI' '
   uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
   test_pass_init &&
-  "$PASS" otp insert passfile <<< "$uri1" &&
-  "$PASS" otp insert -f passfile <<< "$uri2" &&
-  [[ $("$PASS" show passfile) == "$uri2" ]]
+  _pass otp insert passfile <<< "$uri1" &&
+  _pass otp insert -f passfile <<< "$uri2" &&
+  [[ $(_pass show passfile) == "$uri2" ]]
 '
 
 test_expect_success 'Insert passfile from secret with options(issuer, accountname)' '
@@ -117,8 +117,8 @@ test_expect_success 'Insert passfile from secret with options(issuer, accountnam
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert -s -i Example -a alice@google.com passfile <<< "$secret" &&
-  [[ $("$PASS" show passfile) == "$uri" ]]
+  _pass otp insert -s -i Example -a alice@google.com passfile <<< "$secret" &&
+  [[ $(_pass show passfile) == "$uri" ]]
 '
 
 test_expect_success 'Insert secret containing lowercase letters and spaces' '
@@ -126,8 +126,8 @@ test_expect_success 'Insert secret containing lowercase letters and spaces' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert -s -i Example -a alice@google.com passfile <<< "$secret" &&
-  [[ $("$PASS" show passfile) == "$uri" ]]
+  _pass otp insert -s -i Example -a alice@google.com passfile <<< "$secret" &&
+  [[ $(_pass show passfile) == "$uri" ]]
 '
 
 test_expect_success 'Insert from secret without passfile' '
@@ -135,8 +135,8 @@ test_expect_success 'Insert from secret without passfile' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert -s -i Example -a alice@google.com <<< "$secret" &&
-  [[ $("$PASS" show Example/alice@google.com) == "$uri" ]]
+  _pass otp insert -s -i Example -a alice@google.com <<< "$secret" &&
+  [[ $(_pass show Example/alice@google.com) == "$uri" ]]
 '
 
 test_expect_success 'Tolerates padding in secret' '
@@ -144,8 +144,8 @@ test_expect_success 'Tolerates padding in secret' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert -s -i Example -a alice@google.com <<< "$secret" &&
-  [[ $("$PASS" show Example/alice@google.com) == "$uri" ]]
+  _pass otp insert -s -i Example -a alice@google.com <<< "$secret" &&
+  [[ $(_pass show Example/alice@google.com) == "$uri" ]]
 '
 
 test_expect_success 'Allow path prefixes in insert' '
@@ -153,8 +153,8 @@ test_expect_success 'Allow path prefixes in insert' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert -s -p totp -i Example -a alice@google.com <<< "$secret" &&
-  [[ $("$PASS" show totp/Example/alice@google.com) == "$uri" ]]
+  _pass otp insert -s -p totp -i Example -a alice@google.com <<< "$secret" &&
+  [[ $(_pass show totp/Example/alice@google.com) == "$uri" ]]
 '
 
 test_expect_success 'Allow multiple levels in path prefix' '
@@ -162,16 +162,16 @@ test_expect_success 'Allow multiple levels in path prefix' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert -s -p totp/pass-test -i Example -a alice@google.com <<< "$secret" &&
-  [[ $("$PASS" show totp/pass-test/Example/alice@google.com) == "$uri" ]]
+  _pass otp insert -s -p totp/pass-test -i Example -a alice@google.com <<< "$secret" &&
+  [[ $(_pass show totp/pass-test/Example/alice@google.com) == "$uri" ]]
 '
 
 test_expect_success 'Insert TOTP URI with port number' '
   uri="otpauth://totp/Example:alice@google.com:443?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" otp insert passfile <<< "$uri" &&
-  [[ $("$PASS" show passfile) == "$uri" ]]
+  _pass otp insert passfile <<< "$uri" &&
+  [[ $(_pass show passfile) == "$uri" ]]
 '
 
 test_done

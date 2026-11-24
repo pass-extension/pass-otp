@@ -23,6 +23,9 @@ RM ?= rm -f
 PROVE ?= prove
 AGGREGATE_SCRIPT ?= aggregate-results.sh
 DEFAULT_TEST_TARGET ?= test
+COVERAGE ?= true
+TMP ?= /tmp/tests/pass-otp
+export COVERAGE TMP
 
 T = $(sort $(wildcard *.t))
 
@@ -42,7 +45,7 @@ $(T):
 	@echo "*** $@ ***"; '$(SHELL_PATH_SQ)' $@ $(TEST_OPTS)
 
 pre-clean:
-	$(RM) -r test-results
+	$(RM) -r test-results '$(TMP)'
 
 clean-except-prove-cache:
 	$(RM) -r 'trash directory'.* test-results
@@ -56,12 +59,10 @@ aggregate-results-and-cleanup:
 	$(MAKE) clean
 
 aggregate-results: $(T)
-	for f in test-results/*.counts; do \
-		echo "$$f"; \
-	done | '$(SHELL_PATH_SQ)' '$(AGGREGATE_SCRIPT)'
+	@'$(SHELL_PATH_SQ)' '$(AGGREGATE_SCRIPT)'
 
 lint:
-	shellcheck -s bash setup.sh
+	shellcheck -s bash setup.sh $(AGGREGATE_SCRIPT)
 
 .PHONY: all debug test prove $(T) pre-clean clean lint
 .PHONY: aggregate-results-and-cleanup aggregate-results

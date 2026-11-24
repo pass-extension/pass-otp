@@ -9,9 +9,9 @@ test_expect_success 'Reads non-terminal input' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
-  "$PASS" otp append -e passfile <<< "$uri" &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  _pass insert -e passfile <<< "$existing" &&
+  _pass otp append -e passfile <<< "$uri" &&
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_expect_success 'Read secret non-terminal input' '
@@ -20,9 +20,9 @@ test_expect_success 'Read secret non-terminal input' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
-  "$PASS" otp append -s -i Example -a alice@google.com -e passfile <<< "$secret" &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  _pass insert -e passfile <<< "$existing" &&
+  _pass otp append -s -i Example -a alice@google.com -e passfile <<< "$secret" &&
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_expect_success 'Reads terminal input in noecho mode' '
@@ -30,7 +30,7 @@ test_expect_success 'Reads terminal input in noecho mode' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
+  _pass insert -e passfile <<< "$existing" &&
   { expect -d <<EOD
     spawn "$PASS" otp append passfile
     expect {
@@ -46,7 +46,7 @@ test_expect_success 'Reads terminal input in noecho mode' '
     }
 EOD
   } &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_expect_success 'Reads terminal input in echo mode' '
@@ -54,7 +54,7 @@ test_expect_success 'Reads terminal input in echo mode' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
+  _pass insert -e passfile <<< "$existing" &&
   {
     expect <<EOD
       spawn "$PASS" otp append -e passfile
@@ -67,7 +67,7 @@ test_expect_success 'Reads terminal input in echo mode' '
       }
 EOD
   } &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_expect_success 'Insert secret containing lowercase letters and spaces' '
@@ -76,7 +76,7 @@ test_expect_success 'Insert secret containing lowercase letters and spaces' '
   uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
+  _pass insert -e passfile <<< "$existing" &&
   {
     expect <<EOD
       spawn "$PASS" otp append -s -i Example -a alice@google.com -e passfile
@@ -89,7 +89,7 @@ test_expect_success 'Insert secret containing lowercase letters and spaces' '
       }
 EOD
   } &&
-  [[ $("$PASS" otp uri passfile) == "$uri" ]]
+  [[ $(_pass otp uri passfile) == "$uri" ]]
 '
 
 test_expect_success 'Prompts before overwriting key URI' '
@@ -98,8 +98,8 @@ test_expect_success 'Prompts before overwriting key URI' '
   uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
-  "$PASS" otp append -e passfile <<< "$uri1" &&
+  _pass insert -e passfile <<< "$existing" &&
+  _pass otp append -e passfile <<< "$uri1" &&
   {
     expect -d <<EOD
       spawn "$PASS" otp append -e passfile
@@ -116,7 +116,7 @@ test_expect_success 'Prompts before overwriting key URI' '
       }
 EOD
   } &&
-  [[ $("$PASS" otp uri passfile) == "$uri1" ]]
+  [[ $(_pass otp uri passfile) == "$uri1" ]]
 '
 
 test_expect_success 'Force overwrites key URI' '
@@ -125,10 +125,10 @@ test_expect_success 'Force overwrites key URI' '
   uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
-  "$PASS" otp append -e passfile <<< "$uri1" &&
-  "$PASS" otp append -ef passfile <<< "$uri2" &&
-  [[ $("$PASS" otp uri passfile) == "$uri2" ]]
+  _pass insert -e passfile <<< "$existing" &&
+  _pass otp append -e passfile <<< "$uri1" &&
+  _pass otp append -ef passfile <<< "$uri2" &&
+  [[ $(_pass otp uri passfile) == "$uri2" ]]
 '
 
 test_expect_success 'Preserves multiline contents' '
@@ -150,9 +150,9 @@ baz bar foo
 EOF
 
   test_pass_init &&
-  "$PASS" insert -mf passfile <<< "$existing" &&
-  "$PASS" otp append -ef passfile <<< "$uri2" &&
-  [[ $("$PASS" show passfile) == "$expected" ]]
+  _pass insert -mf passfile <<< "$existing" &&
+  _pass otp append -ef passfile <<< "$uri2" &&
+  [[ $(_pass show passfile) == "$expected" ]]
 '
 
 test_expect_success 'Keep original password' '
@@ -160,9 +160,9 @@ test_expect_success 'Keep original password' '
   uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
 
   test_pass_init &&
-  "$PASS" insert -e passfile <<< "$existing" &&
-  "$PASS" otp append -e passfile <<< "$uri" &&
-  [[ $("$PASS" show passfile | head -1) == "$existing" ]]
+  _pass insert -e passfile <<< "$existing" &&
+  _pass otp append -e passfile <<< "$uri" &&
+  [[ $(_pass show passfile | head -1) == "$existing" ]]
 '
 
 test_done
