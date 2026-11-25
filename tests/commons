@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# pass otp - Password Store Extension (https://www.passwordstore.org/)
-# Copyright (C) 2017 Tad Fisher <tadfisher@gmail.com>.
+# pass extensions - Password Store Extensions (https://www.pass-extension.org)
 # Copyright (C) 2017-2026 Alexandre PUJOL <alexandre@pujol.io>.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -14,9 +13,9 @@
 #   _pass	Run pass, under kcov when $COVERAGE is true
 #
 
-# shellcheck disable=SC1091,SC2034
+# shellcheck disable=SC1091,SC2016,SC2034
 
-# Project directory, we must be called from test/
+# Project directory
 TESTS_HOME="$(pwd)"
 PROJECT_HOME="$(dirname "$TESTS_HOME")"
 
@@ -24,19 +23,16 @@ PROJECT_HOME="$(dirname "$TESTS_HOME")"
 _die() { echo "${@}" && exit 1; }
 PASS="$(command -v pass)"
 GPG="$(command -v gpg)"
-EXPECT="$(command -v expect)"
-OATHTOOL="$(command -v oathtool)"
 [[ -e "$PASS" ]] || _die "Could not find pass command"
 [[ -e "$GPG" ]] || _die "Could not find gpg command"
-[[ -e "$EXPECT" ]] || _die "Could not find expect command"
-[[ -e "$OATHTOOL" ]] || _die "Could not find oathtool command"
 if [[ "$COVERAGE" == true ]]; then
 	KCOV="$(command -v kcov)"
 	[[ -e "$KCOV" ]] || _die "Could not find kcov command"
 	mkdir -p "$TMP"
 	_pass() {
 		"$KCOV" --bash-dont-parse-binary-dir \
-			--include-path="$PROJECT_HOME/otp.bash" --exclude-path=/ \
+			--exclude-line="esac done,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}" \
+			--include-path="$PROJECT_HOME" --exclude-path="$TESTS_HOME" \
 			"$TMP/$(basename "$0")" "$PASS" "${@}"
 	}
 else
@@ -45,11 +41,11 @@ fi
 
 # sharness config
 export SHARNESS_TEST_DIRECTORY="$TESTS_HOME"
-export SHARNESS_TEST_SRCDIR="$TESTS_HOME"
+export SHARNESS_TEST_SRCDIR="$PROJECT_HOME"
 source ./lib-sharness/functions.sh
-source ./sharness.sh
+source ./sharness
 
-#  Prepare pass config vars
+# Prepare pass config vars
 unset PASSWORD_STORE_DIR
 unset PASSWORD_STORE_KEY
 unset PASSWORD_STORE_GIT
@@ -68,25 +64,33 @@ unset EDITOR
 
 export PASSWORD_STORE_ENABLE_EXTENSIONS=true
 export PASSWORD_STORE_EXTENSIONS_DIR="$PROJECT_HOME"
-export PASSWORD_STORE_DIR="$SHARNESS_TRASH_DIRECTORY/test-store"
-export GIT_DIR="$PASSWORD_STORE_DIR/.git"
-export GIT_WORK_TREE="$PASSWORD_STORE_DIR"
 
-# GnuPG config, the test keys are unencrypted
+# GnuPG config
 unset GPG_AGENT_INFO
 export GNUPGHOME="$TESTS_HOME/gnupg/"
 export KEY1="D4C78DB7920E1E27F5416B81CC9DB947CF90C77B"
 export KEY2="70BD448330ACF0653645B8F2B4DDBFF0D774A374"
 export KEY3="62EBE74BE834C2EC71E6414595C4B715EB7D54A8"
 export KEY4="9378267629F989A0E96677B7976DD3D6E4691410"
-export KEY5="4D2AFBDE67C60F5999D143AFA6E073D439E5020C"
+export KEY_UNTRUSTED="4D2AFBDE67C60F5999D143AFA6E073D439E5020C"
+export KEY_PUBLIC="6E2AA5413833357EF9CA5F16D1F2750C5B995BE4"
+export KEY_INVALID="8BEB79760D3D8748267E27F5416BFF9987DB13AF"
 chmod 700 "$GNUPGHOME"
 
-# Test helpers
+# Extension specific
+
+EXPECT="$(command -v expect)"
+OATHTOOL="$(command -v oathtool)"
+[[ -e "$EXPECT" ]] || _die "Could not find expect command"
+[[ -e "$OATHTOOL" ]] || _die "Could not find oathtool command"
+
+export PASSWORD_STORE_DIR="$SHARNESS_TRASH_DIRECTORY/test-store"
+export GIT_DIR="$PASSWORD_STORE_DIR/.git"
+export GIT_WORK_TREE="$PASSWORD_STORE_DIR"
 
 test_pass_init() {
 	rm -rf "$PASSWORD_STORE_DIR"
-	_pass init "$KEY1" "$KEY2" "$KEY3" "$KEY4" "$KEY5"
+	_pass init "$KEY1" "$KEY2" "$KEY3" "$KEY4"
 }
 
 test_pass_git_init() {
