@@ -1,168 +1,169 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091,SC2016,SC2164
 
-export test_description="Tests pass otp append commands"
-
-. ./setup.sh
+export test_description="pass otp: append"
+cd tests
+source ./commons
 
 test_expect_success 'Reads non-terminal input' '
-  existing="foo bar baz"
-  uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    existing="foo bar baz"
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  _pass otp append -e passfile <<< "$uri" &&
-  [[ $(_pass otp uri passfile) == "$uri" ]]
-'
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    _pass otp append -e passfile <<< "$uri" &&
+    [[ $(_pass otp uri passfile) == "$uri" ]]
+    '
 
 test_expect_success 'Read secret non-terminal input' '
-  existing="foo bar baz"
-  secret=JBSWY3DPEHPK3PXP
-  uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+    existing="foo bar baz"
+    secret=JBSWY3DPEHPK3PXP
+    uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  _pass otp append -s -i Example -a alice@google.com -e passfile <<< "$secret" &&
-  [[ $(_pass otp uri passfile) == "$uri" ]]
-'
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    _pass otp append -s -i Example -a alice@google.com -e passfile <<< "$secret" &&
+    [[ $(_pass otp uri passfile) == "$uri" ]]
+    '
 
 test_expect_success 'Reads terminal input in noecho mode' '
-  existing="foo bar baz"
-  uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+    existing="foo bar baz"
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  { expect -d <<EOD
-    spawn "$PASS" otp append passfile
-    expect {
-      "Enter" {
-        send "$uri\r"
-        exp_continue
-      }
-      "Retype" {
-        send "$uri\r"
-        exp_continue
-      }
-      eof
-    }
-EOD
-  } &&
-  [[ $(_pass otp uri passfile) == "$uri" ]]
-'
-
-test_expect_success 'Reads terminal input in echo mode' '
-  existing="foo bar baz"
-  uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
-
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  {
-    expect <<EOD
-      spawn "$PASS" otp append -e passfile
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    { expect -d <<EOD
+      spawn "$PASS" otp append passfile
       expect {
         "Enter" {
+          send "$uri\r"
+          exp_continue
+        }
+        "Retype" {
           send "$uri\r"
           exp_continue
         }
         eof
       }
 EOD
-  } &&
-  [[ $(_pass otp uri passfile) == "$uri" ]]
-'
+    } &&
+    [[ $(_pass otp uri passfile) == "$uri" ]]
+    '
+
+test_expect_success 'Reads terminal input in echo mode' '
+    existing="foo bar baz"
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    {
+      expect <<EOD
+        spawn "$PASS" otp append -e passfile
+        expect {
+          "Enter" {
+            send "$uri\r"
+            exp_continue
+          }
+          eof
+        }
+EOD
+    } &&
+    [[ $(_pass otp uri passfile) == "$uri" ]]
+    '
 
 test_expect_success 'Insert secret containing lowercase letters and spaces' '
-  existing="foo bar baz"
-  secret="jbsw y3dp ehpk 3pxp"
-  uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+    existing="foo bar baz"
+    secret="jbsw y3dp ehpk 3pxp"
+    uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  {
-    expect <<EOD
-      spawn "$PASS" otp append -s -i Example -a alice@google.com -e passfile
-      expect {
-        "Enter" {
-          send "$secret\r"
-          exp_continue
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    {
+      expect <<EOD
+        spawn "$PASS" otp append -s -i Example -a alice@google.com -e passfile
+        expect {
+          "Enter" {
+            send "$secret\r"
+            exp_continue
+          }
+          eof
         }
-        eof
-      }
 EOD
-  } &&
-  [[ $(_pass otp uri passfile) == "$uri" ]]
-'
+    } &&
+    [[ $(_pass otp uri passfile) == "$uri" ]]
+    '
 
 test_expect_success 'Prompts before overwriting key URI' '
-  existing="foo bar baz"
-  uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
-  uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
+    existing="foo bar baz"
+    uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  _pass otp append -e passfile <<< "$uri1" &&
-  {
-    expect -d <<EOD
-      spawn "$PASS" otp append -e passfile
-      expect {
-        "Enter" {
-          send "$uri2\r"
-          exp_continue
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    _pass otp append -e passfile <<< "$uri1" &&
+    {
+      expect -d <<EOD
+        spawn "$PASS" otp append -e passfile
+        expect {
+          "Enter" {
+            send "$uri2\r"
+            exp_continue
+          }
+          "An OTP secret already exists" {
+            send "n\r"
+            exp_continue
+          }
+          eof
         }
-        "An OTP secret already exists" {
-          send "n\r"
-          exp_continue
-        }
-        eof
-      }
 EOD
-  } &&
-  [[ $(_pass otp uri passfile) == "$uri1" ]]
-'
+    } &&
+    [[ $(_pass otp uri passfile) == "$uri1" ]]
+    '
 
 test_expect_success 'Force overwrites key URI' '
-  existing="foo bar baz"
-  uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
-  uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
+    existing="foo bar baz"
+    uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  _pass otp append -e passfile <<< "$uri1" &&
-  _pass otp append -ef passfile <<< "$uri2" &&
-  [[ $(_pass otp uri passfile) == "$uri2" ]]
-'
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    _pass otp append -e passfile <<< "$uri1" &&
+    _pass otp append -ef passfile <<< "$uri2" &&
+    [[ $(_pass otp uri passfile) == "$uri2" ]]
+    '
 
 test_expect_success 'Preserves multiline contents' '
-  uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
-  uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
+    uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
-  read -r -d "" existing <<EOF
+    read -r -d "" existing <<EOF
 foo bar baz
 zab rab oof
 $uri1
 baz bar foo
 EOF
 
-  read -r -d "" expected <<EOF
+    read -r -d "" expected <<EOF
 foo bar baz
 zab rab oof
 $uri2
 baz bar foo
 EOF
 
-  test_pass_init &&
-  _pass insert -mf passfile <<< "$existing" &&
-  _pass otp append -ef passfile <<< "$uri2" &&
-  [[ $(_pass show passfile) == "$expected" ]]
-'
+    test_pass_init &&
+    _pass insert -mf passfile <<< "$existing" &&
+    _pass otp append -ef passfile <<< "$uri2" &&
+    [[ $(_pass show passfile) == "$expected" ]]
+    '
 
 test_expect_success 'Keep original password' '
-  existing="foo bar baz"
-  uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    existing="foo bar baz"
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
 
-  test_pass_init &&
-  _pass insert -e passfile <<< "$existing" &&
-  _pass otp append -e passfile <<< "$uri" &&
-  [[ $(_pass show passfile | head -1) == "$existing" ]]
-'
+    test_pass_init &&
+    _pass insert -e passfile <<< "$existing" &&
+    _pass otp append -e passfile <<< "$uri" &&
+    [[ $(_pass show passfile | head -1) == "$existing" ]]
+    '
 
 test_done
