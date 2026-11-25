@@ -30,7 +30,7 @@ jobs:
 
       - name: Run the tests
         shell: bash
-        run: make test | tee "$RUNNER_TEMP/results.txt"
+        run: make tests | tee "$RUNNER_TEMP/results.txt"
 
       - name: Coverage summary
         run: |
