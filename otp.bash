@@ -19,6 +19,8 @@
 VERSION="1.1.2"
 OATH=$(command -v oathtool)
 OTPTOOL=$(command -v otptool)
+readonly OATH OTPTOOL
+readonly PASSAGE="${PASSAGE:-0}"
 
 if [[ $PASSAGE == 1 ]]; then
   EXT="age"
@@ -383,9 +385,13 @@ cmd_otp_code() {
     fi
   done < <(printf '%s\n' "$contents")
 
-  # Check oathtool for stdin secrets feature
-  local OATH_SAFE=
-  [[ -n "$OATH" ]] && "$OATH" - <<< 00 >/dev/null 2>&1 && OATH_SAFE=1
+  # Select the generator: oathtool for stdin secrets, else otptool
+  local generator=oath-argv
+  if [[ -n "$OATH" ]] && "$OATH" - <<< 00 >/dev/null 2>&1; then
+    generator=oath-stdin
+  elif [[ -n "$OTPTOOL" ]]; then
+    generator=otptool
+  fi
 
   local cmd
   case "$otp_type" in
@@ -395,26 +401,12 @@ cmd_otp_code() {
       [[ -n "$otp_algorithm" ]] && cmd+=(--totp="${otp_algorithm,,}")
       [[ -n "$otp_period" ]] && cmd+=(--time-step-size="$otp_period"s)
       [[ -n "$otp_digits" ]] && cmd+=(--digits="$otp_digits")
-      if [[ -n "$OATH_SAFE" ]] ; then
-        cmd+=(-) # secrets on stdin
-        unset OTPTOOL
-      else
-        cmd+=("$otp_secret")
-      fi
-      [[ -n "$OTPTOOL" ]] && cmd=("$OTPTOOL" "$uri")
       ;;
 
     hotp)
       local counter=$((10#$otp_counter + 1)) # base 10: a leading zero is not octal
       cmd=("$OATH" --base32 --hotp --counter="$counter")
       [[ -n "$otp_digits" ]] && cmd+=(--digits="$otp_digits")
-      if [[ -n "$OATH_SAFE" ]] ; then
-        cmd+=(-) # secrets on stdin
-        unset OTPTOOL
-      else
-        cmd+=("$otp_secret")
-      fi
-      [[ -n "$OTPTOOL" ]] && cmd=("$OTPTOOL" "$uri")
       ;;
 
     *)
@@ -423,11 +415,11 @@ cmd_otp_code() {
   esac
 
   local out
-  if [[ -n "$OATH" && -n "$OATH_SAFE" && -z "$OTPTOOL" ]] ; then
-    out=$(printf '%s\n' "$otp_secret" | "${cmd[@]}") || die "$path: failed to generate OTP code."
-  else
-    out=$("${cmd[@]}") || die "$path: failed to generate OTP code."
-  fi
+  case "$generator" in
+    oath-stdin) out=$(printf '%s\n' "$otp_secret" | "${cmd[@]}" -) ;;
+    oath-argv) out=$("${cmd[@]}" "$otp_secret") ;;
+    otptool) out=$("$OTPTOOL" "$uri") ;;
+  esac || die "$path: failed to generate OTP code."
 
   if [[ "$otp_type" == "hotp" ]]; then
     # Increment HOTP counter in-place
