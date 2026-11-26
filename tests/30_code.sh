@@ -118,4 +118,11 @@ test_expect_success 'Generates HOTP code for URI with port number' '
     [[ $(_pass otp uri passfile) == "$inc" ]]
     '
 
+test_expect_success 'Fails on a passfile that does not decrypt' '
+    test_pass_init &&
+    echo garbage > "$PASSWORD_STORE_DIR/passfile.gpg" &&
+    test_must_fail _pass otp passfile 2> err &&
+    grep -q "decryption failed" err
+    '
+
 test_done
