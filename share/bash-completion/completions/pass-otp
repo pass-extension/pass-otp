@@ -1,3 +1,5 @@
+# pass-otp completion file for bash
+
 PASSWORD_STORE_EXTENSION_COMMANDS+=(otp)
 
 __password_store_extension_complete_otp() {

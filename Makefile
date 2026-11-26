@@ -1,34 +1,28 @@
-PROG ?= otp
+#!/usr/bin/make -f
+
+EXT ?= otp
 PREFIX ?= /usr/local
-DESTDIR ?=
-LIBDIR ?= $(PREFIX)/lib
-SYSTEM_EXTENSION_DIR ?= $(LIBDIR)/password-store/extensions
-MANDIR ?= $(PREFIX)/man
-BASHCOMPDIR ?= /etc/bash_completion.d
+LIBDIR ?= ${PREFIX}/lib
+MANDIR ?= ${PREFIX}/share/man
+SYSTEM_EXTENSION_DIR ?= ${LIBDIR}/password-store/extensions
+BASHCOMPDIR ?= ${PREFIX}/share/bash-completion/completions
+ZSHCOMPDIR ?= ${PREFIX}/share/zsh/site-functions
 
 all:
-	@echo "pass-$(PROG) is a shell script and does not need compilation, it can be simply executed."
-	@echo ""
+	@echo "pass-${EXT} is a shell script and does not need compilation, it can be simply executed."
 	@echo "To install it try \"make install\" instead."
-	@echo
-	@echo "To run pass $(PROG) one needs to have some tools installed on the system:"
-	@echo "     password store"
 
-install:
-	install -d "$(DESTDIR)$(MANDIR)/man1" && install -m 0644 pass-$(PROG).1 "$(DESTDIR)$(MANDIR)/man1/pass-$(PROG).1"
-	install -d "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/"
-	install -m0755 $(PROG).bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/$(PROG).bash"
-	install -d "$(DESTDIR)$(BASHCOMPDIR)/"
-	install -m 644 pass-otp.bash.completion  "$(DESTDIR)$(BASHCOMPDIR)/pass-otp"
-	@echo
-	@echo "pass-$(PROG) is installed successfully"
-	@echo
+install_share:
+	@install -Dm0644 share/bash-completion/completions/pass-${EXT} "${DESTDIR}${BASHCOMPDIR}/pass-${EXT}"
+	@install -Dm0644 share/zsh/site-functions/_pass-${EXT} "${DESTDIR}${ZSHCOMPDIR}/_pass-${EXT}"
+ifneq (,$(wildcard ./share/man/man1/pass-${EXT}.1))
+	@install -Dm0644 share/man/man1/pass-${EXT}.1 "${DESTDIR}${MANDIR}/man1/pass-${EXT}.1"
+endif
 
-uninstall:
-	rm -vrf \
-		"$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/$(PROG).bash" \
-		"$(DESTDIR)$(MANDIR)/man1/pass-$(PROG).1" \
-		"$(DESTDIR)$(BASHCOMPDIR)/pass-otp"
+install: install_share
+	@install -Dm0755 ${EXT}.bash "${DESTDIR}${SYSTEM_EXTENSION_DIR}/${EXT}.bash"
+	@echo "pass-${EXT} is installed successfully"
+
 
 lint:
 	shellcheck -s bash $(PROG).bash
