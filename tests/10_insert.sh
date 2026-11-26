@@ -208,4 +208,28 @@ test_expect_success 'Insert TOTP URI with port number' '
     [[ $(_pass show passfile) == "$uri" ]]
     '
 
+test_expect_success 'Rejects a sneaky default pass-name before any prompt' '
+    uri="otpauth://totp/..:passwd?secret=JBSWY3DPEHPK3PXP&issuer=.."
+
+    test_pass_init &&
+    touch "$PASSWORD_STORE_DIR/../passwd.gpg" &&
+    expect <<EOD
+      spawn "$PASS" otp insert -e
+      expect {
+        "Enter" {
+          send "$uri\r"
+          exp_continue
+        }
+        "Insert into" {
+          send "y\r"
+          exp_continue
+        }
+        "already exists" {
+          exit 1
+        }
+        eof
+      }
+EOD
+    '
+
 test_done

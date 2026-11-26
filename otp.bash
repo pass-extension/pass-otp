@@ -304,8 +304,9 @@ cmd_otp_insert() {
     if [ -n "$path_prefix" ]; then
       path="${path_prefix%/}/$path"
     fi
-    yesno "Insert into $path?"
   fi
+  check_sneaky_paths "$path"
+  [[ $# -eq 0 ]] && yesno "Insert into $path?"
 
   local passfile="$PREFIX/$path.$EXT"
   [[ $force -eq 0 && -e $passfile ]] && yesno "An entry already exists for $path. Overwrite it?"
