@@ -210,4 +210,15 @@ test_expect_success 'Keep original password' '
     [[ $(_pass show passfile | head -1) == "$existing" ]]
     '
 
+test_expect_success 'Keeps a passfile that does not decrypt' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+
+    test_pass_init &&
+    echo garbage > "$PASSWORD_STORE_DIR/passfile.gpg" &&
+    cp "$PASSWORD_STORE_DIR/passfile.gpg" before &&
+    test_must_fail _pass otp append passfile <<< "$uri" 2> err &&
+    grep -q "decryption failed" err &&
+    cmp before "$PASSWORD_STORE_DIR/passfile.gpg"
+    '
+
 test_done
