@@ -68,7 +68,7 @@ otp_parse_uri() {
 
   local p=${BASH_REMATCH[9]}
   local params
-  local IFS=\&; read -r -a params < <(echo "$p") ; unset IFS
+  local IFS=\&; read -r -a params <<< "$p" ; unset IFS
 
   pattern='^([^=]+)=(.+)$'
   for param in "${params[@]}"; do
@@ -151,7 +151,7 @@ otp_replace_uri() {
       found=1
     fi
     out+="$line"$'\n'
-  done <<< "$1"
+  done < <(printf '%s\n' "$1")
   [[ $found -eq 0 ]] && out+="$2"$'\n'
   printf '%s' "${out%$'\n'}"
 }
@@ -165,10 +165,10 @@ otp_insert() {
   mkdir -p -v "$PREFIX/$(dirname "$path")"
   if [[ $PASSAGE == 1 ]]; then
     set_age_recipients "$(dirname "$path")"
-    echo "$contents" | $AGE -e "${AGE_RECIPIENT_ARGS[@]}" -o "$passfile" || die "OTP secret encryption aborted"
+    printf '%s\n' "$contents" | $AGE -e "${AGE_RECIPIENT_ARGS[@]}" -o "$passfile" || die "OTP secret encryption aborted"
   else
     set_gpg_recipients "$(dirname "$path")"
-    echo "$contents" | $GPG -e "${GPG_RECIPIENT_ARGS[@]}" -o "$passfile" "${GPG_OPTS[@]}" || die "OTP secret encryption aborted."
+    printf '%s\n' "$contents" | $GPG -e "${GPG_RECIPIENT_ARGS[@]}" -o "$passfile" "${GPG_OPTS[@]}" || die "OTP secret encryption aborted."
   fi
 
   if [[ "$quiet" -eq 1 ]]; then
@@ -367,7 +367,7 @@ cmd_otp_code() {
       otp_parse_uri "$line"
       break
     fi
-  done < <(echo "$contents")
+  done < <(printf '%s\n' "$contents")
 
   # Check oathtool for stdin secrets feature
   local OATH_SAFE=
@@ -378,7 +378,7 @@ cmd_otp_code() {
     totp)
       cmd=("$OATH" --base32)
       [[ -z "$otp_algorithm" ]] && cmd+=(--totp)
-      [[ -n "$otp_algorithm" ]] && cmd+=(--totp="$(echo "${otp_algorithm}"|tr "[:upper:]" "[:lower:]")")
+      [[ -n "$otp_algorithm" ]] && cmd+=(--totp="${otp_algorithm,,}")
       [[ -n "$otp_period" ]] && cmd+=(--time-step-size="$otp_period"s)
       [[ -n "$otp_digits" ]] && cmd+=(--digits="$otp_digits")
       if [[ -n "$OATH_SAFE" ]] ; then
@@ -410,7 +410,7 @@ cmd_otp_code() {
 
   local out
   if [[ -n "$OATH" && -n "$OATH_SAFE" && -z "$OTPTOOL" ]] ; then
-    out=$("${cmd[@]}" <<< "$otp_secret") || die "$path: failed to generate OTP code."
+    out=$(printf '%s\n' "$otp_secret" | "${cmd[@]}") || die "$path: failed to generate OTP code."
   else
     out=$("${cmd[@]}") || die "$path: failed to generate OTP code."
   fi
@@ -459,7 +459,7 @@ cmd_otp_uri() {
       otp_parse_uri "$line"
       break
     fi
-  done < <(echo "$contents")
+  done < <(printf '%s\n' "$contents")
 
   if [[ $clip -eq 1 ]]; then
     clip "$otp_uri" "OTP key URI for $path"
