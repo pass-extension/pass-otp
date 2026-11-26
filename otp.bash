@@ -391,7 +391,7 @@ cmd_otp_code() {
       ;;
 
     hotp)
-      local counter=$((otp_counter+1))
+      local counter=$((10#$otp_counter + 1)) # base 10: a leading zero is not octal
       cmd=("$OATH" --base32 --hotp --counter="$counter")
       [[ -n "$otp_digits" ]] && cmd+=(--digits="$otp_digits")
       if [[ -n "$OATH_SAFE" ]] ; then
