@@ -380,7 +380,7 @@ cmd_otp_code() {
 
   local path="${1%/}"
   otp_show "$path"
-  while read -r line; do
+  while IFS= read -r line; do
     if [[ "$line" == otpauth://* ]]; then
       local uri="$line"
       otp_parse_uri "$line"
@@ -456,7 +456,7 @@ cmd_otp_uri() {
   local path="${1%/}"
   otp_show "$path"
 
-  while read -r line; do
+  while IFS= read -r line; do
     if [[ "$line" == otpauth://* ]]; then
       otp_parse_uri "$line"
       break

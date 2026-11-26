@@ -125,4 +125,13 @@ test_expect_success 'Fails on a passfile that does not decrypt' '
     grep -q "decryption failed" err
     '
 
+test_expect_success 'Ignores an indented HOTP line and leaves it untouched' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=1&issuer=Example"
+
+    test_pass_init &&
+    _pass insert -m passfile < <(printf "pw\n  %s\n" "$uri") &&
+    test_must_fail _pass otp passfile &&
+    [[ $(_pass show passfile | grep -c otpauth) -eq 1 ]]
+    '
+
 test_done
