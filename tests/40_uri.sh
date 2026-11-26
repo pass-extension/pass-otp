@@ -21,4 +21,10 @@ test_expect_success 'Shows key URI in multi-line passfile' '
     [[ $(_pass otp uri passfile) == "$uri" ]]
     '
 
+test_expect_success 'Fails for missing secret' '
+    test_pass_init &&
+    _pass insert -e passfile <<< "password" &&
+    test_must_fail _pass otp uri passfile
+    '
+
 test_done

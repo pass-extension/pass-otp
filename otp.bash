@@ -474,6 +474,7 @@ cmd_otp_uri() {
       break
     fi
   done < <(printf '%s\n' "$contents")
+  [[ -z "$otp_uri" ]] && die "$path: OTP secret not found."
 
   if [[ $clip -eq 1 ]]; then
     clip "$otp_uri" "OTP key URI for $path"
