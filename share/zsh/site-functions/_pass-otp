@@ -1,0 +1,62 @@
+#compdef pass-otp
+#description Manage one-time-password (OTP) tokens
+
+_pass-otp () {
+	local -a subcommands
+	subcommands=(
+		"code:Generate an OTP code"
+		"show:Generate an OTP code"
+		"insert:Insert a new OTP key"
+		"add:Insert a new OTP key"
+		"append:Append an OTP key URI to an existing password"
+		"uri:Display the key URI stored in a password"
+		"validate:Test if a URI is a valid OTP key URI"
+		"help:Display help information"
+		"version:Display version information"
+	)
+	local -a secret_opts
+	secret_opts=(
+		{-f,--force}'[do not prompt before overwriting an existing secret]'
+		{-e,--echo}'[echo the input]'
+		{-s,--secret}'[prompt for the OTP secret instead of a key URI]'
+		{-i,--issuer}'[OTP issuer]:issuer:'
+		{-a,--account}'[OTP account name]:account:'
+	)
+
+	if (( CURRENT > 2 )); then
+		case "${words[2]}" in
+			insert|add)
+				_arguments : "${secret_opts[@]}" \
+					{-p,--path}'[path prefix for the path generated from the URI label]:path:'
+				_pass_complete_entries_with_subdirs
+				;;
+			append)
+				_arguments : "${secret_opts[@]}"
+				_pass_complete_entries_with_subdirs
+				;;
+			uri)
+				_arguments : \
+					{-c,--clip}'[put the URI on the clipboard]' \
+					{-q,--qrcode}'[display the URI as a QR code]'
+				_pass_complete_entries_with_subdirs
+				;;
+			validate|help|version) ;;
+			*)
+				_arguments : \
+					{-c,--clip}'[put the OTP code on the clipboard]' \
+					{-q,--quiet}'[do not print the git update message]'
+				_pass_complete_entries_with_subdirs
+				;;
+		esac
+	else
+		_describe -t commands 'pass otp' subcommands
+		_arguments : \
+			{-h,--help}'[display help information]' \
+			'--version[display version information]' \
+			{-c,--clip}'[put the OTP code on the clipboard]' \
+			{-q,--quiet}'[do not print the git update message]'
+		_pass_complete_entries_with_subdirs
+	fi
+}
+
+_pass-otp "$@"
