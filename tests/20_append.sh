@@ -128,7 +128,22 @@ test_expect_success 'Force overwrites key URI' '
     test_pass_init &&
     _pass insert -e passfile <<< "$existing" &&
     _pass otp append -e passfile <<< "$uri1" &&
-    _pass otp append -ef passfile <<< "$uri2" &&
+    {
+      expect -d <<EOD
+        spawn "$PASS" otp append -ef passfile
+        expect {
+          "Enter" {
+            send "$uri2\r"
+            exp_continue
+          }
+          "An OTP secret already exists" {
+            send "n\r"
+            exp_continue
+          }
+          eof
+        }
+EOD
+    } &&
     [[ $(_pass otp uri passfile) == "$uri2" ]]
     '
 

@@ -326,7 +326,7 @@ cmd_otp_append() {
   local existing=0
   [[ $'\n'"$old_contents" == *$'\n'otpauth://* ]] && existing=1
 
-  [[ $existing -eq 1 ]] && yesno "An OTP secret already exists for $path. Overwrite it?"
+  [[ $force -eq 0 && $existing -eq 1 ]] && yesno "An OTP secret already exists for $path. Overwrite it?"
 
   if [[ $from_secret -eq 1 ]]; then
     [ -z "$issuer" ] && issuer=false
