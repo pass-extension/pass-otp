@@ -76,6 +76,17 @@ EOF
     [[ $(_pass show passfile) == "$expected" ]]
     '
 
+test_expect_success 'HOTP counter increment keeps other otpauth lines' '
+    hotp="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+    inc="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=11"
+    totp="otpauth://totp/Other:bob@example.com?secret=GEZDGNBVGY3TQOJQ"
+
+    test_pass_init &&
+    _pass insert -mf passfile <<< "$(printf "pw\n%s\n%s" "$hotp" "$totp")" &&
+    _pass otp passfile &&
+    [[ $(_pass show passfile) == "$(printf "pw\n%s\n%s" "$inc" "$totp")" ]]
+    '
+
 test_expect_success 'Generates TOTP code for URI with port number' '
     uri="otpauth://totp/Example:alice@domain.com:443?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
