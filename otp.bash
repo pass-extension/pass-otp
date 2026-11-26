@@ -138,6 +138,24 @@ otp_read_secret() {
   otp_parse_uri "$uri"
 }
 
+# Replace the first otpauth:// line of a passfile content
+# $1: Passfile content
+# $2: New otpauth:// URI, appended when $1 has no otpauth:// line
+# Return 0
+# Print the new content on stdout, other lines (blank ones included) kept verbatim
+otp_replace_uri() {
+  local line out="" found=0
+  while IFS= read -r line; do
+    if [[ $found -eq 0 && "$line" == otpauth://* ]]; then
+      line="$2"
+      found=1
+    fi
+    out+="$line"$'\n'
+  done <<< "$1"
+  [[ $found -eq 0 ]] && out+="$2"$'\n'
+  printf '%s' "${out%$'\n'}"
+}
+
 otp_insert() {
   local path="$1" passfile="$2" contents="$3" message="$4" quiet="$5"
 
@@ -289,14 +307,10 @@ cmd_otp_append() {
     old_contents=$($GPG -d "${GPG_OPTS[@]}" "$passfile")
   fi
 
-  local existing contents=""
-  while IFS= read -r line || [ -n "$line" ]; do
-    [[ -z "$existing" && "$line" == otpauth://* ]] && existing="$line"
-    [[ -n "$contents" ]] && contents+=$'\n'
-    contents+="$line"
-  done < <(echo "$old_contents")
+  local existing=0
+  [[ $'\n'"$old_contents" == *$'\n'otpauth://* ]] && existing=1
 
-  [[ -n "$existing" ]] && yesno "An OTP secret already exists for $path. Overwrite it?"
+  [[ $existing -eq 1 ]] && yesno "An OTP secret already exists for $path. Overwrite it?"
 
   if [[ $from_secret -eq 1 ]]; then
     [ -z "$issuer" ] && issuer=false
@@ -310,18 +324,10 @@ cmd_otp_append() {
   fi
 
   local replaced
-  if [[ -n "$existing" ]]; then
-    while IFS= read -r line; do
-      [[ "$line" == otpauth://* ]] && line="$otp_uri"
-      [[ -n "$replaced" ]] && replaced+=$'\n'
-      replaced+="$line"
-    done < <(echo "$contents")
-  else
-    replaced="$contents"$'\n'"$otp_uri"
-  fi
+  replaced=$(otp_replace_uri "$old_contents" "$otp_uri")
 
   local message
-  if [[ -n "$existing" ]]; then
+  if [[ $existing -eq 1 ]]; then
     message="Replace OTP secret for $path."
   else
     message="Append OTP secret for $path."
@@ -411,13 +417,9 @@ cmd_otp_code() {
 
   if [[ "$otp_type" == "hotp" ]]; then
     # Increment HOTP counter in-place
-    local line replaced uri=$otp_uri
+    local replaced uri=$otp_uri
     [[ "$otp_uri" =~ ^(.*[?\&]counter=)[0-9]+(.*)$ ]] && uri="${BASH_REMATCH[1]}$counter${BASH_REMATCH[2]}"
-    while IFS= read -r line; do
-      [[ "$line" == otpauth://* ]] && line="$uri"
-      [[ -n "$replaced" ]] && replaced+=$'\n'
-      replaced+="$line"
-    done < <(echo "$contents")
+    replaced=$(otp_replace_uri "$contents" "$uri")
 
     otp_insert "$path" "$passfile" "$replaced" "Increment HOTP counter for $path." "$quiet"
   fi

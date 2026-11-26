@@ -156,6 +156,26 @@ EOF
     [[ $(_pass show passfile) == "$expected" ]]
     '
 
+test_expect_success 'Replaces only the first otpauth line' '
+    uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    uri2="otpauth://totp/Other:bob@example.com?secret=GEZDGNBVGY3TQOJQ"
+    new="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
+
+    test_pass_init &&
+    _pass insert -mf passfile <<< "$(printf "pw\n%s\n%s" "$uri1" "$uri2")" &&
+    _pass otp append -f passfile <<< "$new" &&
+    [[ $(_pass show passfile) == "$(printf "pw\n%s\n%s" "$new" "$uri2")" ]]
+    '
+
+test_expect_success 'Preserves an empty first line (#207)' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+
+    test_pass_init &&
+    _pass insert -mf passfile <<< "$(printf "\nUsername: foobar")" &&
+    _pass otp append passfile <<< "$uri" &&
+    [[ $(_pass show passfile) == "$(printf "\nUsername: foobar\n%s" "$uri")" ]]
+    '
+
 test_expect_success 'Keep original password' '
     existing="foo bar baz"
     uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
