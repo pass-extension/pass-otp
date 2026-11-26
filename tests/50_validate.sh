@@ -30,6 +30,10 @@ test_expect_success 'Fails for missing counter' '
     test_must_fail _pass otp validate "otpauth://hotp/Example:alice@google.com?secret=HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ"
     '
 
+test_expect_success 'Fails for unencoded colon in issuer (#194)' '
+    test_must_fail _pass otp validate "otpauth://totp/NotABug.org:%20Free%20code%20hosting:no@mail.com?secret=JBSWY3DPEHPK3PXP&issuer=NotABug.org%3A+Free+code+hosting"
+    '
+
 test_expect_success 'Parses TOTP URI with port number' '
     _pass otp validate "otpauth://totp/Example:alice@google.com:443?secret=JBSWY3DPEHPK3PXP&issuer=Example"
     '
