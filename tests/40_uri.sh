@@ -27,4 +27,11 @@ test_expect_success 'Fails for missing secret' '
     test_must_fail _pass otp uri passfile
     '
 
+test_expect_success 'Fails on a passfile that does not decrypt' '
+    test_pass_init &&
+    echo garbage > "$PASSWORD_STORE_DIR/passfile.gpg" &&
+    test_must_fail _pass otp uri passfile 2> err &&
+    grep -q "decryption failed" err
+    '
+
 test_done
