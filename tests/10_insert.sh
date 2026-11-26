@@ -167,6 +167,39 @@ test_expect_success 'Allow multiple levels in path prefix' '
     [[ $(_pass show totp/pass-test/Example/alice@google.com) == "$uri" ]]
     '
 
+test_expect_success 'Keeps a literal + in the label' '
+    uri="otpauth://totp/Example:alice+otp@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    _pass otp insert <<< "$uri" &&
+    [[ $(_pass show "Example/alice+otp@google.com") == "$uri" ]]
+    '
+
+test_expect_success 'Decodes + as a space in the issuer parameter' '
+    uri="otpauth://totp/alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=ACME+Co"
+
+    test_pass_init &&
+    _pass otp insert <<< "$uri" &&
+    [[ $(_pass show "ACME Co/alice@google.com") == "$uri" ]]
+    '
+
+test_expect_success 'Keeps a decoded backslash literal' '
+    uri="otpauth://totp/Example:a%5Cnb?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    _pass otp insert <<< "$uri" &&
+    [[ $(_pass show "Example/a\\nb") == "$uri" ]]
+    '
+
+test_expect_success 'Encodes spaces and UTF-8 from secret options' '
+    secret="JBSWY3DPEHPK3PXP"
+    uri="otpauth://totp/ACME%20Soci%C3%A9t%C3%A9:bob?secret=JBSWY3DPEHPK3PXP&issuer=ACME%20Soci%C3%A9t%C3%A9"
+
+    test_pass_init &&
+    _pass otp insert -s -i "ACME Société" -a bob <<< "$secret" &&
+    [[ $(_pass show "ACME Société/bob") == "$uri" ]]
+    '
+
 test_expect_success 'Insert TOTP URI with port number' '
     uri="otpauth://totp/Example:alice@google.com:443?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 

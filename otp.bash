@@ -26,24 +26,38 @@ else
   EXT="gpg"
 fi
 
-## source:  https://gist.github.com/cdown/1163649
+# Percent-encode a string, byte by byte (UTF-8 safe)
+# $1: String to encode
+# Return 0
+# Print the encoded string on stdout
 urlencode() {
-  local l=${#1}
-  for (( i = 0 ; i < l ; i++ )); do
-    local c=${1:i:1}
+  local LC_ALL=C i c
+  for (( i = 0 ; i < ${#1} ; i++ )); do
+    c=${1:i:1}
     case "$c" in
       [a-zA-Z0-9.~_-]) printf "%c" "$c";;
-      ' ') printf + ;;
       *) printf '%%%.2X' "'$c"
     esac
   done
 }
 
+# Decode %XX sequences only: '+' and backslashes are kept as is, and an
+# invalid '%' is left untouched
+# $1: String to decode
+# Return 0
+# Print the decoded string on stdout
 urldecode() {
-  # urldecode <string>
-
-  local url_encoded="${1//+/ }"
-  printf '%b' "${url_encoded//%/\\x}"
+  local LC_ALL=C s="$1" out="" byte i
+  for (( i = 0 ; i < ${#s} ; i++ )); do
+    if [[ ${s:i:3} =~ ^%[0-9A-Fa-f]{2}$ ]]; then
+      printf -v byte '%b' "\\x${s:i+1:2}"
+      out+="$byte"
+      (( i += 2 ))
+    else
+      out+="${s:i:1}"
+    fi
+  done
+  printf '%s' "$out"
 }
 
 # Parse a Key URI per: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
@@ -79,7 +93,7 @@ otp_parse_uri() {
         algorithm) otp_algorithm=${BASH_REMATCH[2]} ;;
         period) otp_period=${BASH_REMATCH[2]} ;;
         counter) otp_counter=${BASH_REMATCH[2]} ;;
-        issuer) otp_issuer=$(urldecode "${BASH_REMATCH[2]}") ;;
+        issuer) otp_issuer=$(urldecode "${BASH_REMATCH[2]//+/ }") ;; # '+' is a space in a query
         *) ;;
       esac
     fi
