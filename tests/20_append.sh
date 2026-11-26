@@ -176,6 +176,15 @@ test_expect_success 'Preserves an empty first line (#207)' '
     [[ $(_pass show passfile) == "$(printf "\nUsername: foobar\n%s" "$uri")" ]]
     '
 
+test_expect_success 'Keeps a password that looks like an echo option' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+
+    test_pass_init &&
+    _pass insert -m passfile <<< "-e" &&
+    _pass otp append passfile <<< "$uri" &&
+    [[ $(_pass show passfile) == "$(printf -- "-e\n%s" "$uri")" ]]
+    '
+
 test_expect_success 'Keep original password' '
     existing="foo bar baz"
     uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
