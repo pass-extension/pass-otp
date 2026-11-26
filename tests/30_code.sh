@@ -87,6 +87,17 @@ test_expect_success 'HOTP counter increment keeps other otpauth lines' '
     [[ $(_pass show passfile) == "$(printf "pw\n%s\n%s" "$inc" "$totp")" ]]
     '
 
+test_expect_success 'HOTP counter with a leading zero is decimal' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=09"
+    inc="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    code=$(_pass otp passfile) &&
+    [[ $code == "$("$OATHTOOL" --base32 --hotp --counter=10 JBSWY3DPEHPK3PXP)" ]] &&
+    [[ $(_pass otp uri passfile) == "$inc" ]]
+    '
+
 test_expect_success 'Generates TOTP code for URI with port number' '
     uri="otpauth://totp/Example:alice@domain.com:443?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
