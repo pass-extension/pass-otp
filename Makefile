@@ -23,14 +23,19 @@ install: install_share
 	@install -Dm0755 ${EXT}.bash "${DESTDIR}${SYSTEM_EXTENSION_DIR}/${EXT}.bash"
 	@echo "pass-${EXT} is installed successfully"
 
+COVERAGE ?= true
+TMP ?= /tmp/tests/pass-${EXT}
+PASS_TEST_OPTS ?= --verbose --immediate --root=/tmp/sharness
+T = $(sort $(wildcard tests/*.sh))
+export COVERAGE TMP
+tests: $(T)
+	@tests/results
+$(T):
+	@$@ $(PASS_TEST_OPTS)
 
 lint:
-	shellcheck -s bash $(PROG).bash
-	$(MAKE) -C test lint
+	shellcheck --shell=bash ${EXT}.bash tests/commons tests/results tests/*.sh
 
-test:
-	$(MAKE) -C test all
+check: lint tests
 
-check: lint test
-
-.PHONY: install uninstall lint test check
+.PHONY: install tests $(T) lint check
