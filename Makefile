@@ -36,6 +36,9 @@ $(T):
 lint:
 	shellcheck --shell=bash ${EXT}.bash tests/commons tests/results tests/*.sh
 
-check: lint tests
+docs:
+	@pandoc -t man -s -o share/man/man1/pass-${EXT}.1 share/man/man1/pass-${EXT}.md
+
+check: lint tests docs
 
 .PHONY: install tests $(T) lint check
