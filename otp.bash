@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
-# pass otp - Password Store Extension (https://www.passwordstore.org/)
+# pass otp - Password Store Extension (https://pass-extension.org/otp/)
 # Copyright (C) 2017 Tad Fisher
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-# []
+# Copyright (C) 2026 Alexandre PUJOL <alexandre@pujol.io>.
+# SPDX-License-Identifier: GPL-3.0-or-later
 
-VERSION="1.1.2"
+set -o pipefail
+
+readonly EXTENSION_VERSION="1.2.0"
 OATH=$(command -v oathtool)
 OTPTOOL=$(command -v otptool)
 readonly OATH OTPTOOL
@@ -212,15 +202,23 @@ otp_insert() {
   fi
 }
 
+cmd_otp_version() {
+    cat <<-_EOF
+$PROGRAM $COMMAND $EXTENSION_VERSION - Manage one-time-password (OTP) tokens.
+_EOF
+}
+
 cmd_otp_usage() {
-  cat <<-_EOF
+	cmd_otp_version
+    echo
+    cat <<-_EOF
 Usage:
 
-    $PROGRAM otp [code] [--clip,-c] pass-name
+    $PROGRAM $COMMAND [code] [--clip,-c] pass-name
         Generate an OTP code and optionally put it on the clipboard.
         If put on the clipboard, it will be cleared in $CLIP_TIME seconds.
 
-    $PROGRAM otp insert [--force,-f] [--echo,-e]
+    $PROGRAM $COMMAND insert [--force,-f] [--echo,-e]
             [[--secret, -s] [--issuer,-i issuer] [--account,-a account] [--path,-p path-name]]
             [pass-name]
         Prompt for and insert a new OTP key.
@@ -233,7 +231,7 @@ Usage:
         Optionally, echo the input. Prompt before overwriting existing URI
         unless forced. This command accepts input from stdin.
 
-    $PROGRAM otp append [--force,-f] [--echo,-e]
+    $PROGRAM $COMMAND append [--force,-f] [--echo,-e]
             [[--secret, -s] [--issuer,-i issuer] [--account,-a account]]
             pass-name
         Appends an OTP key URI to an existing password file.
@@ -245,20 +243,15 @@ Usage:
         Optionally, echo the input. Prompt before overwriting an existing URI
         unless forced. This command accepts input from stdin.
 
-    $PROGRAM otp uri [--clip,-c] [--qrcode,-q] pass-name
+    $PROGRAM $COMMAND uri [--clip,-c] [--qrcode,-q] pass-name
         Display the key URI stored in pass-name. Optionally, put it on the
         clipboard, or display a QR code.
 
-    $PROGRAM otp validate uri
+    $PROGRAM $COMMAND validate uri
         Test if the given URI is a valid OTP key URI.
 
 More information may be found in the pass-otp(1) man page.
 _EOF
-  exit 0
-}
-
-cmd_otp_version() {
-  echo $VERSION
   exit 0
 }
 
