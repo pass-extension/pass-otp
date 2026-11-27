@@ -1,0 +1,83 @@
+---
+stages:
+  - lint
+  - tests
+  - dist
+  - deploy
+
+
+# Dependencies definitions
+# ------------------------
+
+.distribution:
+  stage: dist
+  script:
+    - make tests COVERAGE=false
+
+# Jobs definitions
+# ----------------
+
+# Code Linters
+
+shellcheck:
+  stage: lint
+  image: koalaman/shellcheck-alpine
+  script:
+    - shellcheck --shell=bash otp.bash tests/commons tests/results tests/*.sh
+
+# Code tests
+
+tests:
+  stage: tests
+  image: archlinux
+  before_script:
+    - pacman -Syu --noconfirm --noprogressbar make grep pass git oath-toolkit expect jq kcov
+  script:
+    - make tests COVERAGE=true
+    - mv /tmp/tests/pass-otp/kcov kcov/
+  coverage: '/^coverage: (\d+(?:\.\d+)?)%/'
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - kcov/
+
+# Distribution tests
+
+archlinux:
+  image: archlinux
+  extends: .distribution
+  before_script:
+    - pacman -Syu --noconfirm --noprogressbar make grep pass git oath-toolkit expect
+
+ubuntu:
+  image: ubuntu
+  extends: .distribution
+  before_script:
+    - apt-get update -q && apt-get install -y make pass grep git oathtool expect
+
+debian:
+  image: debian
+  extends: .distribution
+  before_script:
+    - apt-get update -q && apt-get install -y make pass grep git oathtool expect
+
+fedora:
+  image: fedora
+  extends: .distribution
+  before_script:
+    - dnf -y install make gpg pass grep git findutils oathtool expect --setopt=install_weak_deps=False
+
+# Code coverage deployment
+
+pages:
+  stage: deploy
+  dependencies:
+    - tests
+  script:
+    - mv kcov/ public/
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH

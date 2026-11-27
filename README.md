@@ -1,6 +1,6 @@
 # pass-otp
 
-[![][workflow]][action] [![][release]][release-link]
+[![][workflow]][action] [![][gitlab]][gitlab-link] [![][coverage]][coverage-link] [![][release]][release-link]
 
 **A [pass] extension for managing one-time-password (OTP) tokens.**
 
@@ -285,6 +285,10 @@ Feedback, contributors, pull requests are all very welcome.
 [github-link]: https://github.com/pass-extension/pass-otp
 [workflow]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fpass-extension%2Fpass-otp%2Fbadge%3Fref%3Dmain&style=flat-square
 [action]: https://actions-badge.atrox.dev/pass-extension/pass-otp/goto?ref=main
+[gitlab]: https://gitlab.com/pass-extension/pass-otp/badges/main/pipeline.svg?style=flat-square
+[gitlab-link]: https://gitlab.com/pass-extension/pass-otp/pipelines
+[coverage]: https://gitlab.com/pass-extension/pass-otp/badges/main/coverage.svg?style=flat-square
+[coverage-link]: https://pass-extension.gitlab.io/pass-otp/
 [release]: https://img.shields.io/github/release/pass-extension/pass-otp.svg?maxAge=600&style=flat-square
 [release-link]: https://github.com/pass-extension/pass-otp/releases/latest
 [repology-link]: https://repology.org/project/pass-otp/versions
