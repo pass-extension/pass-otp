@@ -4,24 +4,58 @@
 
 **A [pass] extension for managing one-time-password (OTP) tokens.**
 
+## Description
+
+`pass otp` extends the pass utility with an `otp` command for managing OTP tokens:
+adding secrets, generating codes and displaying key URIs in the standard
+[Key Uri Format][key-uri]. It supports both time-based (TOTP) and counter-based (HOTP)
+tokens.
+
+The token is stored as an `otpauth://` line inside a regular password file, so it can
+live in its own entry or next to the password it protects. The HOTP counter is updated
+(and committed when the store is a git repository) each time a code is generated.
+
+Codes are generated with [oathtool]. `pass otp` works with both `pass` (GPG) and
+[passage] (age).
+
+Pass otp is compatible with browser extensions: [passff] fills OTP fields with codes
+from `pass otp`, and [browserpass] generates TOTP codes from the same `otpauth://` line.
+
 ## Usage
 
 ```
+pass otp 1.2.0 - Manage one-time-password (OTP) tokens.
+
 Usage:
 
     pass otp [code] [--clip,-c] pass-name
         Generate an OTP code and optionally put it on the clipboard.
         If put on the clipboard, it will be cleared in 45 seconds.
 
-    pass otp insert [--force,-f] [--echo,-e] [pass-name]
-        Prompt for and insert a new OTP key URI. If pass-name is not supplied,
-        use the URI label. Optionally, echo the input. Prompt before overwriting
-        existing password unless forced. This command accepts input from stdin.
+    pass otp insert [--force,-f] [--echo,-e]
+            [[--secret, -s] [--issuer,-i issuer] [--account,-a account] [--path,-p path-name]]
+            [pass-name]
+        Prompt for and insert a new OTP key.
 
-    pass otp append [--force,-f] [--echo,-e] pass-name
-        Appends an OTP key URI to an existing password file. Optionally, echo
-        the input. Prompt before overwriting an existing URI unless forced. This
-        command accepts input from stdin.
+        If 'secret' is specified, prompt for the OTP secret, assuming SHA1
+        algorithm, 30-second period, and 6 OTP digits; one of 'issuer' or
+        'account' is also required. Otherwise, prompt for a key URI; if
+        'pass-name' is not supplied, use the URI label.
+
+        Optionally, echo the input. Prompt before overwriting existing URI
+        unless forced. This command accepts input from stdin.
+
+    pass otp append [--force,-f] [--echo,-e]
+            [[--secret, -s] [--issuer,-i issuer] [--account,-a account]]
+            pass-name
+        Appends an OTP key URI to an existing password file.
+
+        If 'secret' is specified, prompt for the OTP secret, assuming SHA1
+        algorithm, 30-second period, and 6 OTP digits; one of 'issuer' or
+        'account' is also required. Otherwise, prompt for a key URI.
+
+        Optionally, echo the input. Prompt before overwriting an existing URI
+        unless forced. This command accepts input from stdin.
 
     pass otp uri [--clip,-c] [--qrcode,-q] pass-name
         Display the key URI stored in pass-name. Optionally, put it on the
@@ -35,29 +69,25 @@ More information may be found in the pass-otp(1) man page.
 
 ## Examples
 
-Prompt for an OTP token, hiding input:
-
+**Prompt for an OTP token, hiding input**
 ```
 $ pass otp insert totp-secret
 Enter otpauth:// URI for totp-secret:
 Retype otpauth:// URI for totp-secret:
 ```
 
-Prompt for an OTP token, echoing input:
-
+**Prompt for an OTP token, echoing input**
 ```
 $ pass otp insert -e totp-secret
 Enter otpauth:// URI for totp-secret: otpauth://totp/totp-secret?secret=AAAAAAAAAAAAAAAA&issuer=totp-secret
 ```
 
-Pipe an `otpauth://` URI into a passfile:
-
+**Pipe an `otpauth://` URI into a passfile**
 ```
 $ pass otp insert totp-secret < totp-secret.txt
 ```
 
-Use [zbar](https://github.com/mchehab/zbar) to decode a QR image or webcam shot into a passfile:
-
+**Use [zbar](https://github.com/mchehab/zbar) to decode a QR image or webcam shot into a passfile**
 ```
 $ zbarimg -q --raw qrcode.png | pass otp insert totp-secret
 ```
@@ -91,14 +121,14 @@ screenshot of the QR code and run:
 
 * On MacOS, use `pngpaste -`
 
-Generate a 2FA code using this token:
+**Generate a 2FA code using this token**
 
 ```
 $ pass otp totp-secret
 698816
 ```
 
-Display a QR code for an OTP token:
+**Display a QR code for an OTP token**
 
 ```
 $ pass otp uri -q totp-secret
@@ -122,129 +152,6 @@ $ pass otp uri -q totp-secret
 █████████████████████████████████████
 █████████████████████████████████████
 ```
-
-## Installation
-
-### From git
-
-```
-git clone https://github.com/tadfisher/pass-otp
-cd pass-otp
-sudo make install
-```
-
-or, to install in the user dir (following the standard XDG base directory paths):
-
-```
-$ echo $XDG_DATA_HOME
-/home/$USER/.local/share
-
-$ export PASSWORD_STORE_ENABLE_EXTENSIONS=true
-$ export PASSWORD_STORE_EXTENSIONS_DIR=$XDG_DATA_HOME/password-store/.extensions
-$ export BASH_COMPLETION_USER_DIR=$XDG_DATA_HOME/bash-completion/completions
-
-$ PREFIX=$XDG_DATA_HOME \
-    LIBDIR=$PREFIX \
-    BASHCOMPDIR=$BASH_COMPLETION_USER_DIR \
-    make install
-```
-
-To use with [passage](https://github.com/FiloSottile/passage), set the variable `SYSTEM_EXTENSION_DIR` to one of passage’s extensions directories (by default `$HOME/.local/share/passage/extensions` and `/usr/lib/passage/extensions`) when installing:
-
-```
-sudo make install SYSTEM_EXTENSION_DIR=/usr/lib/passage/extensions
-```
-
-### Arch Linux
-
-`pass-otp` is available in the `[community]` repository:
-
-```
-pacman -S pass-otp
-```
-
-### Debian
-
-`pass-otp` is available in `buster` and `sid` repositories with the package-name `pass-extension-otp` according to [tracker](https://tracker.debian.org/pkg/pass-otp):
-
-```
-apt install pass-otp
-```
-
-### Fedora
-
-`pass-otp` is available in Fedora 28 and up, under the package name `pass-otp` according to [Fedora Apps](https://packages.fedoraproject.org/pkgs/pass-otp/).
-
-```
-dnf install pass-otp
-```
-
-### Gentoo Linux
-
-```
-emerge app-admin/pass-otp
-```
-
-### Nix/NixOS
-
-The following expression builds `pass` with the `pass-otp` extension:
-
-```nix
-with pkgs;
-pass.withExtensions (exts: [ exts.pass-otp ])
-```
-
-The above can be installed imperatively via `nix-env` or ran in a temporary
-environment via `nix-shell`.
-
-### macOS
-#### Brew
-```
-brew install pass-otp
-```
-
-#### Macports.org
-```
-sudo port install pass-otp
-```
-
-### openSUSE
-
-```
-zypper install pass-otp
-```
-
-### Crux Linux
-pass-otp in this port
-
-```
-# MK ports collection
-#
-# https://git.malte-kiefer.de/crux-ports/
-
-ROOT_DIR=/usr/ports/mk
-URL=https://git.malte-kiefer.de/crux-ports/plain
-```
-
-## Requirements
-
-- `pass` 1.7.0 or later for extension support
-- `oathtool` or `Pass::OTP` for generating 2FA codes
-- `qrencode` for generating QR code images
-
-### Build requirements
-
-- `make test`
-  - `pass` >= 1.7.0
-  - `git`
-  - `oathtool`
-  - `expect`
-  - `make` (GNU make)
-- `make lint`
-  - `shellcheck`
-
-## Browser Support
-[passff](https://github.com/passff/passff) >= 1.6.0 now supports using `pass-otp` to fill login forms.
 
 ## Migrating from pass-otp 0.1
 
@@ -294,11 +201,97 @@ mantra. Please think it through before running this migration.
 If you read the warning paragraph above, [keep calm and move on with the
 migration](https://github.com/tadfisher/pass-otp/wiki/How-to-migrate-your-Google-Authenticator-database-to-pass-otp%3F).
 
+## Installation
+
+<table align="right">
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Arch" src="https://repology.org/badge/version-for-repo/arch/pass-otp.svg?header=Arch"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Debian" src="https://repology.org/badge/version-for-repo/debian_unstable/pass-otp.svg?header=Debian"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp-unclassified/versions"><img alt="NixOS" src="https://repology.org/badge/version-for-repo/nix_unstable/pass-otp-unclassified.svg?header=NixOS"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Ubuntu" src="https://repology.org/badge/version-for-repo/ubuntu_26_04/pass-otp.svg?header=Ubuntu%2026.04"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Fedora" src="https://repology.org/badge/version-for-repo/fedora_rawhide/pass-otp.svg?header=Fedora"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Gentoo" src="https://repology.org/badge/version-for-repo/gentoo/pass-otp.svg?header=Gentoo"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Alpine" src="https://repology.org/badge/version-for-repo/alpine_edge/pass-otp.svg?header=Alpine"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Homebrew" src="https://repology.org/badge/version-for-repo/homebrew/pass-otp.svg?header=Homebrew"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="FreeBSD" src="https://repology.org/badge/version-for-repo/freebsd/pass-otp.svg?header=FreeBSD"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="OpenBSD" src="https://repology.org/badge/version-for-repo/openbsd/pass-otp.svg?header=OpenBSD"></a></td></tr>
+  <tr><td><a href="https://repology.org/project/pass-otp/versions"><img alt="Void" src="https://repology.org/badge/version-for-repo/void_x86_64/pass-otp.svg?header=Void"></a></td></tr>
+</table>
+
+**Requirements**
+
+* `pass 1.7.0` or greater.
+* `oathtool` or `Pass::OTP` to generate codes.
+* `qrencode` to display QR codes.
+
+**ArchLinux**
+
+```sh
+pacman -S pass-otp
+```
+
+**Debian/Ubuntu**
+
+```sh
+apt install pass-otp
+```
+
+**Fedora**
+
+```sh
+dnf install pass-otp
+```
+
+**Gentoo**
+
+```sh
+emerge app-admin/pass-otp
+```
+
+**NixOS**
+
+```nix
+pass.withExtensions (exts: [ exts.pass-otp ])
+```
+
+**openSUSE**
+
+```sh
+zypper install pass-otp
+```
+
+**OSX**
+
+```sh
+brew install pass-otp  # or: sudo port install pass-otp
+```
+
+**From git**
+
+```sh
+git clone https://github.com/pass-extension/pass-otp/
+cd pass-otp
+sudo make install  # For OSX: make install PREFIX=$(brew --prefix)
+```
+
+To use with [passage], install into one of passage's extension directories:
+```sh
+sudo make install SYSTEM_EXTENSION_DIR=/usr/lib/passage/extensions
+```
+
+## Contribution
+
+Feedback, contributors, pull requests are all very welcome.
+
 [github-link]: https://github.com/pass-extension/pass-otp
-[workflow]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fpass-extension%2Fpass-otp%2Fbadge%3Fref%3Ddevelop&style=flat-square
-[action]: https://actions-badge.atrox.dev/pass-extension/pass-otp/goto?ref=develop
+[workflow]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fpass-extension%2Fpass-otp%2Fbadge%3Fref%3Dmain&style=flat-square
+[action]: https://actions-badge.atrox.dev/pass-extension/pass-otp/goto?ref=main
 [release]: https://img.shields.io/github/release/pass-extension/pass-otp.svg?maxAge=600&style=flat-square
 [release-link]: https://github.com/pass-extension/pass-otp/releases/latest
 [repology-link]: https://repology.org/project/pass-otp/versions
 
 [pass]: https://www.passwordstore.org/
+[key-uri]: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
+[oathtool]: https://www.nongnu.org/oath-toolkit/
+[passage]: https://github.com/FiloSottile/passage
+[passff]: https://github.com/passff/passff
+[browserpass]: https://github.com/browserpass/browserpass-extension
