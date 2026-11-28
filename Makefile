@@ -3,12 +3,15 @@
 MAKEFLAGS += --silent
 
 EXT ?= otp
+
 prefix ?= /usr/local
-LIBDIR ?= ${prefix}/lib
+libdir ?= ${prefix}/lib
+libexecdir ?= ${libdir}  # It should be $exec_prefix/libexec, but pass(1) uses $libdir.
 datarootdir ?= ${prefix}/share
 mandir ?= ${datarootdir}/man
 man1dir ?= ${mandir}/man1
-SYSTEM_EXTENSION_DIR ?= ${LIBDIR}/password-store/extensions
+
+SYSTEM_EXTENSION_DIR ?= ${libexecdir}/password-store/extensions
 BASHCOMPDIR ?= ${datarootdir}/bash-completion/completions
 ZSHCOMPDIR ?= ${datarootdir}/zsh/site-functions
 
