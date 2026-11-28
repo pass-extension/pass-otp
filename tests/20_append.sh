@@ -231,4 +231,39 @@ test_expect_success 'Keeps a passfile that does not decrypt' '
     cmp before "$PASSWORD_STORE_DIR/passfile.gpg"
     '
 
+test_expect_success 'Commits append and replace' '
+    uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+    uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
+
+    test_pass_git_init &&
+    _pass insert -e passfile <<< "password" &&
+    _pass otp append passfile <<< "$uri1" &&
+    [[ $(git log -1 --format=%s) == "Append OTP secret for passfile." ]] &&
+    _pass otp append -f passfile <<< "$uri2" &&
+    [[ $(git log -1 --format=%s) == "Replace OTP secret for passfile." ]]
+    '
+
+test_expect_success 'Fails on a missing passfile' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
+
+    test_pass_init &&
+    test_must_fail _pass otp append missing <<< "$uri" 2> err &&
+    grep -q "passfile not found" err &&
+    [[ ! -e "$PASSWORD_STORE_DIR/missing.gpg" ]]
+    '
+
+test_expect_success 'Fails for --secret without --issuer or --account' '
+    test_pass_init &&
+    _pass insert -e passfile <<< "password" &&
+    test_must_fail _pass otp append -s passfile <<< "JBSWY3DPEHPK3PXP" 2> err &&
+    grep -q "Missing one of" err &&
+    [[ $(_pass show passfile) == "password" ]]
+    '
+
+test_expect_success 'Fails on usage errors' '
+    test_pass_init &&
+    test_must_fail _pass otp append &&
+    test_must_fail _pass otp append a b
+    '
+
 test_done
