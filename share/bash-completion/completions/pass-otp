@@ -5,7 +5,11 @@ PASSWORD_STORE_EXTENSION_COMMANDS+=(otp)
 __password_store_extension_complete_otp() {
   if [[ $COMP_CWORD -gt 2 ]]; then
     case "${COMP_WORDS[2]}" in
-      insert|append)
+      insert|add)
+        COMPREPLY+=($(compgen -W "-e --echo -f --force -s --secret -i --issuer -a --account -p --path" -- ${cur}))
+        _pass_complete_entries
+        ;;
+      append)
         COMPREPLY+=($(compgen -W "-e --echo -f --force -s --secret -i --issuer -a --account" -- ${cur}))
         _pass_complete_entries
         ;;
