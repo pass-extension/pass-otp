@@ -6,7 +6,7 @@ EXT ?= otp
 prefix ?= /usr/local
 LIBDIR ?= ${prefix}/lib
 datarootdir ?= ${prefix}/share
-MANDIR ?= ${datarootdir}/man
+mandir ?= ${datarootdir}/man
 SYSTEM_EXTENSION_DIR ?= ${LIBDIR}/password-store/extensions
 BASHCOMPDIR ?= ${datarootdir}/bash-completion/completions
 ZSHCOMPDIR ?= ${datarootdir}/zsh/site-functions
@@ -23,7 +23,7 @@ install_share:
 	${INSTALL_DATA} -D share/bash-completion/completions/pass-${EXT} "${DESTDIR}${BASHCOMPDIR}/pass-${EXT}"
 	${INSTALL_DATA} -D share/zsh/site-functions/_pass-${EXT} "${DESTDIR}${ZSHCOMPDIR}/_pass-${EXT}"
 ifneq (,$(wildcard ./share/man/man1/pass-${EXT}.1))
-	${INSTALL_DATA} -D share/man/man1/pass-${EXT}.1 "${DESTDIR}${MANDIR}/man1/pass-${EXT}.1"
+	${INSTALL_DATA} -D share/man/man1/pass-${EXT}.1 "${DESTDIR}${mandir}/man1/pass-${EXT}.1"
 endif
 
 install: install_share
