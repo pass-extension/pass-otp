@@ -147,15 +147,39 @@ otp_read_secret() {
   otp_parse_uri "$uri"
 }
 
-# Replace the first otpauth:// line of a passfile content
+# Check if a line holds an OTP token
+# $1: Line
+# Return 0 if it does, and set otp_line_uri (the otpauth:// URI) in the caller's scope:
+# callers declare it local
+otp_token_line() {
+  [[ "$1" == otpauth://* ]] || return 1
+  otp_line_uri="$1"
+}
+
+# Find the first OTP token line of a passfile content
 # $1: Passfile content
-# $2: New otpauth:// URI, appended when $1 has no otpauth:// line
+# Return 0 if found
+# Print the otpauth:// URI on stdout
+otp_find_line() {
+  local line otp_line_uri
+  while IFS= read -r line; do
+    if otp_token_line "$line"; then
+      printf '%s\n' "$otp_line_uri"
+      return 0
+    fi
+  done < <(printf '%s\n' "$1")
+  return 1
+}
+
+# Replace the first OTP token line of a passfile content
+# $1: Passfile content
+# $2: New otpauth:// URI, appended when $1 has no token line
 # Return 0
 # Print the new content on stdout, other lines (blank ones included) kept verbatim
 otp_replace_uri() {
-  local line out="" found=0
+  local line out="" found=0 otp_line_uri
   while IFS= read -r line; do
-    if [[ $found -eq 0 && "$line" == otpauth://* ]]; then
+    if [[ $found -eq 0 ]] && otp_token_line "$line"; then
       line="$2"
       found=1
     fi
@@ -335,7 +359,7 @@ cmd_otp_append() {
   otp_show "$path"
 
   local existing=0
-  [[ $'\n'"$otp_contents" == *$'\n'otpauth://* ]] && existing=1
+  otp_find_line "$otp_contents" >/dev/null && existing=1
 
   [[ $force -eq 0 && $existing -eq 1 ]] && yesno "An OTP secret already exists for $path. Overwrite it?"
 
@@ -378,14 +402,9 @@ cmd_otp_code() {
 
   [[ $err -ne 0 || $# -ne 1 ]] && die "Usage: $PROGRAM $COMMAND [--clip,-c] [--quiet,-q] pass-name"
 
-  local path="${1%/}" line
+  local path="${1%/}" uri
   otp_show "$path"
-  while IFS= read -r line; do
-    if [[ "$line" == otpauth://* ]]; then
-      otp_parse_uri "$line"
-      break
-    fi
-  done < <(printf '%s\n' "$otp_contents")
+  uri=$(otp_find_line "$otp_contents") && otp_parse_uri "$uri"
 
   # Select the generator: oathtool for stdin secrets, else otptool
   local generator=oath-argv
@@ -441,7 +460,7 @@ cmd_otp_code() {
 }
 
 cmd_otp_uri() {
-  local opts qrcode=0 clip=0 line
+  local opts qrcode=0 clip=0 uri
   opts="$($GETOPT -o cq -l clip,qrcode -n "$PROGRAM" -- "$@")"
   local err=$?
   eval set -- "$opts"
@@ -456,12 +475,7 @@ cmd_otp_uri() {
   local path="${1%/}"
   otp_show "$path"
 
-  while IFS= read -r line; do
-    if [[ "$line" == otpauth://* ]]; then
-      otp_parse_uri "$line"
-      break
-    fi
-  done < <(printf '%s\n' "$otp_contents")
+  uri=$(otp_find_line "$otp_contents") && otp_parse_uri "$uri"
   [[ -z "$otp_uri" ]] && die "$path: OTP secret not found."
 
   if [[ $clip -eq 1 ]]; then
