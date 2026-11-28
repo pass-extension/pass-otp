@@ -153,4 +153,66 @@ test_expect_success 'Ignores an indented HOTP line and leaves it untouched' '
     [[ $(_pass show passfile | grep -c otpauth) -eq 1 ]]
     '
 
+test_expect_success 'Generates HOTP code with 8 digits' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10&digits=8"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    [[ $(_pass otp passfile) == "$("$OATHTOOL" --base32 --hotp --digits=8 --counter=11 JBSWY3DPEHPK3PXP)" ]]
+    '
+
+test_expect_success 'Uses the first otpauth line' '
+    first="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP"
+    second="otpauth://totp/Other:bob@example.com?secret=GEZDGNBVGY3TQOJQ"
+
+    test_pass_init &&
+    _pass insert -m passfile < <(printf "pw\n%s\n%s\n" "$first" "$second") &&
+    test_totp passfile --base32 --totp JBSWY3DPEHPK3PXP
+    '
+
+test_expect_success 'Commits the HOTP counter increment' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+
+    test_pass_git_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    _pass otp passfile &&
+    [[ $(git log -1 --format=%s) == "Increment HOTP counter for passfile." ]]
+    '
+
+test_expect_success 'Copies the code to the clipboard' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    DISPLAY=fake WAYLAND_DISPLAY= PASSWORD_STORE_CLIP_TIME=1 _pass otp -c passfile > out &&
+    grep -qxF "$("$OATHTOOL" --base32 --hotp --counter=11 JBSWY3DPEHPK3PXP)" "$FAKE_CLIPBOARD" &&
+    ! grep -q "[0-9]\{6\}" out
+    '
+
+test_expect_success 'Show is an alias of code' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    [[ $(_pass otp show passfile) == "$("$OATHTOOL" --base32 --hotp --counter=11 JBSWY3DPEHPK3PXP)" ]]
+    '
+
+test_expect_success 'Fails on a missing passfile' '
+    test_pass_init &&
+    test_must_fail _pass otp code missing 2> err &&
+    grep -q "passfile not found" err
+    '
+
+test_expect_success 'Fails on usage errors' '
+    test_pass_init &&
+    test_must_fail _pass otp code &&
+    test_must_fail _pass otp code a b &&
+    test_must_fail _pass otp code --bogus passfile
+    '
+
+test_expect_success 'Prints the version and the usage' '
+    _pass otp version | grep -q "^pass otp [0-9.]* - " &&
+    _pass otp help | grep -q "^Usage:"
+    '
+
 test_done

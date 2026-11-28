@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Fake xclip for testing 'pass otp --clip'. Every copy is appended as a line to
+# $FAKE_CLIPBOARD, the last line is the current clipboard. The history matters:
+# under kcov, pass returns only after its background job has restored the
+# previous clipboard.
+#
+# Intended use:
+#   export PATH="$TESTS_HOME:$PATH" FAKE_CLIPBOARD=<file>
+#   DISPLAY=fake WAYLAND_DISPLAY= pass otp --clip <pass-name>
+#
+# Arguments: [-o] -selection <selection>
+# Returns: 0 on success, 1 on error
+
+if [[ $1 == -o ]]; then
+	printf '%s' "$(tail -n 1 "$FAKE_CLIPBOARD" 2>/dev/null)"
+else
+	{
+		cat
+		echo
+	} >>"$FAKE_CLIPBOARD"
+fi

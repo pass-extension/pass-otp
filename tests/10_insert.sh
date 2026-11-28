@@ -260,4 +260,32 @@ test_expect_success 'Fails with both --path and a pass-name' '
     [[ ! -e "$PASSWORD_STORE_DIR/passfile.gpg" ]]
     '
 
+test_expect_success 'Commits the new entry' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_git_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    [[ $(git log -1 --format=%s) == "Add OTP secret for passfile to store." ]]
+    '
+
+test_expect_success 'Add is an alias of insert' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    _pass otp add passfile <<< "$uri" &&
+    [[ $(_pass show passfile) == "$uri" ]]
+    '
+
+test_expect_success 'Fails for --secret without --issuer or --account' '
+    test_pass_init &&
+    test_must_fail _pass otp insert -s passfile <<< "JBSWY3DPEHPK3PXP" 2> err &&
+    grep -q "Missing one of" err &&
+    [[ ! -e "$PASSWORD_STORE_DIR/passfile.gpg" ]]
+    '
+
+test_expect_success 'Fails for an unknown option' '
+    test_pass_init &&
+    test_must_fail _pass otp insert --bogus passfile <<< "otpauth://totp/a?secret=JBSWY3DPEHPK3PXP"
+    '
+
 test_done
