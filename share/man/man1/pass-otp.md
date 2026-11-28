@@ -14,6 +14,8 @@ pass-otp — A **pass**(1) extension for managing one-time-password (OTP) tokens
 
 **pass otp** extends the **pass**(1) utility with the **otp** command for adding OTP secrets, generating OTP codes, and displaying secret key URIs using the standard *otpauth://* scheme.
 
+The token is the first line of the passfile that starts with *otpauth://*, optionally after an *otpauth:* or *otp:* key, as in *otp: otpauth://totp/...*. Other lines are kept unchanged.
+
 If no *command* is specified, *command* defaults to **code**.
 
 # COMMANDS

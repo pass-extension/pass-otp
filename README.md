@@ -12,7 +12,9 @@ adding secrets, generating codes and displaying key URIs in the standard
 tokens.
 
 The token is stored as an `otpauth://` line inside a regular password file, so it can
-live in its own entry or next to the password it protects. The HOTP counter is updated
+live in its own entry or next to the password it protects. The line may also carry an
+`otpauth:` or `otp:` key (`otp: otpauth://...`), as used by passff and YAML-style
+entries; the key is kept when the line is rewritten. The HOTP counter is updated
 (and committed when the store is a git repository) each time a code is generated.
 
 Codes are generated with [oathtool]. `pass otp` works with both `pass` (GPG) and

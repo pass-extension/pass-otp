@@ -252,4 +252,15 @@ test_expect_success 'Fails and keeps the counter when oathtool fails' '
     [[ $(_pass otp uri passfile) == "$uri" ]]
     '
 
+test_expect_success 'Increments HOTP counter after an otp: key, keeping the key' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10&issuer=Example"
+    inc="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=11&issuer=Example"
+
+    test_pass_init &&
+    _pass insert -m passfile < <(printf "%s\n" password "otp: $uri" "login: alice") &&
+    code=$(_pass otp passfile) &&
+    [[ $code == "$("$OATHTOOL" --base32 --hotp --counter=11 JBSWY3DPEHPK3PXP)" ]] &&
+    [[ $(_pass show passfile) == "$(printf "%s\n" password "otp: $inc" "login: alice")" ]]
+    '
+
 test_done

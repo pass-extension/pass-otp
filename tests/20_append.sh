@@ -266,4 +266,14 @@ test_expect_success 'Fails on usage errors' '
     test_must_fail _pass otp append a b
     '
 
+test_expect_success 'Force append replaces a token after an otpauth: key, keeping the key' '
+    old="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+    new="otpauth://totp/Example:bob@google.com?secret=GEZDGNBVGY3TQOJQ&issuer=Example"
+
+    test_pass_init &&
+    _pass insert -m passfile < <(printf "%s\n" password "otpauth: $old") &&
+    _pass otp append -f passfile <<< "$new" &&
+    [[ $(_pass show passfile) == "$(printf "%s\n" password "otpauth: $new")" ]]
+    '
+
 test_done

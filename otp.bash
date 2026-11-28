@@ -147,13 +147,16 @@ otp_read_secret() {
   otp_parse_uri "$uri"
 }
 
-# Check if a line holds an OTP token
+# Check if a line holds an OTP token: otpauth://..., optionally after an `otpauth:` or
+# `otp:` key (passff, YAML style), case-insensitive, with optional spaces after it
 # $1: Line
-# Return 0 if it does, and set otp_line_uri (the otpauth:// URI) in the caller's scope:
-# callers declare it local
+# Return 0 if it does, and set otp_line_prefix (the key and its spaces, or empty) and
+# otp_line_uri (the otpauth:// URI) in the caller's scope: callers declare them local
 otp_token_line() {
-  [[ "$1" == otpauth://* ]] || return 1
-  otp_line_uri="$1"
+  local re='^(([oO][tT][pP]([aA][uU][tT][hH])?):[[:space:]]*)?(otpauth://.*)$'
+  [[ "$1" =~ $re ]] || return 1
+  otp_line_prefix="${BASH_REMATCH[1]}"
+  otp_line_uri="${BASH_REMATCH[4]}"
 }
 
 # Find the first OTP token line of a passfile content
@@ -161,7 +164,7 @@ otp_token_line() {
 # Return 0 if found
 # Print the otpauth:// URI on stdout
 otp_find_line() {
-  local line otp_line_uri
+  local line otp_line_prefix otp_line_uri
   while IFS= read -r line; do
     if otp_token_line "$line"; then
       printf '%s\n' "$otp_line_uri"
@@ -171,16 +174,16 @@ otp_find_line() {
   return 1
 }
 
-# Replace the first OTP token line of a passfile content
+# Replace the first OTP token line of a passfile content, keeping its key
 # $1: Passfile content
 # $2: New otpauth:// URI, appended when $1 has no token line
 # Return 0
 # Print the new content on stdout, other lines (blank ones included) kept verbatim
 otp_replace_uri() {
-  local line out="" found=0 otp_line_uri
+  local line out="" found=0 otp_line_prefix otp_line_uri
   while IFS= read -r line; do
     if [[ $found -eq 0 ]] && otp_token_line "$line"; then
-      line="$2"
+      line="$otp_line_prefix$2"
       found=1
     fi
     out+="$line"$'\n'

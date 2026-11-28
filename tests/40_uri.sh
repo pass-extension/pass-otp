@@ -68,4 +68,22 @@ test_expect_success 'Fails on usage errors' '
     test_must_fail _pass otp uri a b
     '
 
+test_expect_success 'Shows key URI after an otpauth:, otp: or OTP: key' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    for key in "otpauth: " "otp: " "OTP:"; do
+        test_pass_init &&
+        _pass insert -m passfile < <(printf "%s\n" password "login: alice" "$key$uri") &&
+        [[ $(_pass otp uri passfile) == "$uri" ]] || return 1
+    done
+    '
+
+test_expect_success 'Ignores a line with another key' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    _pass insert -m passfile < <(printf "%s\n" password "url: $uri") &&
+    test_must_fail _pass otp uri passfile
+    '
+
 test_done
