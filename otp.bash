@@ -189,7 +189,7 @@ otp_insert() {
   check_sneaky_paths "$path"
   set_git "$passfile"
 
-  mkdir -p -v "$PREFIX/$(dirname "$path")"
+  mkdir -p "$PREFIX/$(dirname "$path")"
   if [[ $PASSAGE == 1 ]]; then
     set_age_recipients "$(dirname "$path")"
     printf '%s\n' "$contents" | $AGE -e "${AGE_RECIPIENT_ARGS[@]}" -o "$passfile" || die "OTP secret encryption aborted"
