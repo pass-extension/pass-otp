@@ -5,10 +5,11 @@ MAKEFLAGS += --silent
 EXT ?= otp
 prefix ?= /usr/local
 LIBDIR ?= ${prefix}/lib
-MANDIR ?= ${prefix}/share/man
+datarootdir ?= ${prefix}/share
+MANDIR ?= ${datarootdir}/man
 SYSTEM_EXTENSION_DIR ?= ${LIBDIR}/password-store/extensions
-BASHCOMPDIR ?= ${prefix}/share/bash-completion/completions
-ZSHCOMPDIR ?= ${prefix}/share/zsh/site-functions
+BASHCOMPDIR ?= ${datarootdir}/bash-completion/completions
+ZSHCOMPDIR ?= ${datarootdir}/zsh/site-functions
 
 INSTALL ?= install
 INSTALL_DATA ?= $(INSTALL) -m 0644
