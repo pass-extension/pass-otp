@@ -22,7 +22,7 @@ If no *command* is specified, *command* defaults to **code**.
 
 : Generate and print an OTP code from the secret key stored in *pass-name* using **oathtool**(1). If `--clip` or `-c` is specified, do not print the code but instead copy it to the clipboard using **xclip**(1) and then restore the clipboard after 45 (or *PASSWORD_STORE_CLIP_TIME*) seconds. If `--quiet` or `-q` is specified, do not print the git update message to standard out. This command is alternatively named **show**.
 
-**pass otp insert** [ `--force`, `-f` ] [ `--echo`, `-e` ] [ [ `--secret`, `-s` ] [ `--issuer`, `-i` *issuer* ] [ `--account`, `-a` *account* ] [ `--path`, `-p` *path-name* ] ] [ *pass-name* ]
+**pass otp insert** [ `--force`, `-f` ] [ `--echo`, `-e` ] [ [ `--secret`, `-s` ] [ `--issuer`, `-i` *issuer* ] [ `--account`, `-a` *account* ] ] [ `--path`, `-p` *path-name* | *pass-name* ]
 
 : Prompt for and insert a new OTP secret into the password store at *pass-name*.
 
@@ -32,7 +32,7 @@ If no *command* is specified, *command* defaults to **code**.
 
   The secret is consumed from stdin; specify `--echo` or `-e` to echo input when running this command interactively. If *pass-name* is not specified, convert the *issuer:accountname* URI label to a path in the form of *issuer/accountname*. Prompt before overwriting an existing secret, unless `--force` or `-f` is specified. This command is alternatively named **add**.
 
-  `--path` specifies a path prefix to the generated path from the URI label.
+  `--path` specifies a path prefix to the generated path from the URI label. It cannot be combined with *pass-name*.
 
 **pass otp append** [ `--force`, `-f` ] [ `--echo`, `-e` ] [ [ `--secret`, `-s` ] [ `--issuer`, `-i` *issuer* ] [ `--account`, `-a` *account* ] ] *pass-name*
 
@@ -50,7 +50,7 @@ If no *command* is specified, *command* defaults to **code**.
 
 **pass otp validate** *uri*
 
-: Test a URI string for validity according to the Key Uri Format. For more information about this format, see the documentation at <https://github.com/google/google-authenticator/wiki/Key-Uri-Format>.
+: Test a URI string for validity according to the Key Uri Format: a label, a base32 *secret*, a *counter* for HOTP, and, when given, a positive *digits* and *period* and an *algorithm* among SHA1, SHA256 and SHA512. For more information about this format, see the documentation at <https://github.com/google/google-authenticator/wiki/Key-Uri-Format>.
 
 # OPTIONS
 
