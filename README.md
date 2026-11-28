@@ -12,7 +12,9 @@ adding secrets, generating codes and displaying key URIs in the standard
 tokens.
 
 The token is stored as an `otpauth://` line inside a regular password file, so it can
-live in its own entry or next to the password it protects. The HOTP counter is updated
+live in its own entry or next to the password it protects. The line may also carry an
+`otpauth:` or `otp:` key (`otp: otpauth://...`), as used by passff and YAML-style
+entries; the key is kept when the line is rewritten. The HOTP counter is updated
 (and committed when the store is a git repository) each time a code is generated.
 
 Codes are generated with [oathtool]. `pass otp` works with both `pass` (GPG) and
@@ -153,53 +155,10 @@ $ pass otp uri -q totp-secret
 █████████████████████████████████████
 ```
 
-## Migrating from pass-otp 0.1
+## Migration guides
 
-`pass-otp` has switched to storing OTP tokens in the
-standard
-[Key Uri Format](https://github.com/google/google-authenticator/wiki/Key-Uri-Format).
-You'll need to edit any saved tokens and change them to this format. For
-example:
-
-```
-$ pass edit totp-secret
-```
-
-Old format:
-
-```
-otp_secret: AAAAAAAAAAAAAAAA
-otp_type: totp
-otp_algorithm: sha1
-otp_period: 30
-otp_digits: 6
-```
-
-New format:
-
-```
-otpauth://totp/totp-secret?secret=AAAAAAAAAAAAAAAA&issuer=totp-secret
-```
-
-Note that the following default values do not need to be specified in the URI:
-
-| parameter | default |
-| --------- | ------- |
-| algorithm | sha1    |
-| period    | 30      |
-| digits    | 6       |
-
-## Migrating from Google Authenticator
-
-**Warning:** This method is provided as a means to transport your TOTP tokens to
-other devices, disconnected from your single factor authentication part. If you
-add those secrets into the same basket of eggs, you will be defeating the whole
-purpose of the [multi factor
-authentication](https://en.wikipedia.org/wiki/Multi-factor_authentication)
-mantra. Please think it through before running this migration.
-
-If you read the warning paragraph above, [keep calm and move on with the
-migration](https://github.com/tadfisher/pass-otp/wiki/How-to-migrate-your-Google-Authenticator-database-to-pass-otp%3F).
+* [From pass-otp 0.1](https://pass-extension.org/otp/pass-otp-0.1/)
+* [From Google Authenticator](https://pass-extension.org/otp/google-authenticator/)
 
 ## Installation
 

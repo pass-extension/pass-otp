@@ -14,7 +14,8 @@ if [[ "$COVERAGE" == true ]]; then
 	[[ -e "$KCOV" ]] || _die "Could not find kcov command"
 	mapfile -t COVERED < <(find "$TMP" -mindepth 1 -maxdepth 1 -type d -name '*.sh')
 	[[ ${#COVERED[@]} -gt 0 ]] || _die "No coverage data found in $TMP"
-	"$KCOV" --merge "$TMP/kcov" "${COVERED[@]}"
+	"$KCOV" --merge --exclude-line="esac done,done < <(printf,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}" \
+		"$TMP/kcov" "${COVERED[@]}"
 	covered="$(jq -r '.percent_covered' "$TMP/kcov/kcov-merged/coverage.json")"
 	printf "%s: %s%%\n" coverage "$covered"
 fi

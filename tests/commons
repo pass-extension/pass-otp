@@ -31,7 +31,7 @@ if [[ "$COVERAGE" == true ]]; then
 	mkdir -p "$TMP"
 	_pass() {
 		"$KCOV" --bash-dont-parse-binary-dir \
-			--exclude-line="esac done,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}" \
+			--exclude-line="esac done,done < <(printf,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}" \
 			--include-path="$PROJECT_HOME" --exclude-path="$TESTS_HOME" \
 			"$TMP/$(basename "$0")" "$PASS" "${@}"
 	}
@@ -86,7 +86,7 @@ OATHTOOL="$(command -v oathtool)"
 export OATHTOOL
 
 if [[ "$COVERAGE" == true ]]; then
-	PASS_SPAWN="{$KCOV} --bash-dont-parse-binary-dir {--exclude-line=esac done,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}}"
+	PASS_SPAWN="{$KCOV} --bash-dont-parse-binary-dir {--exclude-line=esac done,done < <(printf,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}}"
 	PASS_SPAWN+=" {--include-path=$PROJECT_HOME} {--exclude-path=$TESTS_HOME} {$TMP/$(basename "$0")} {$PASS}"
 else
 	PASS_SPAWN="{$PASS}"
