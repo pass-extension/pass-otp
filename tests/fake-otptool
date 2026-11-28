@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Fake otptool (Pass::OTP) for testing 'pass otp code': it appends the key URI
+# it gets to $FAKE_OTPTOOL_LOG and prints a fixed code.
+#
+# Intended use:
+#   export FAKE_OTPTOOL_LOG=<file>
+#   mkdir -p bin && cp "$TESTS_HOME/fake-otptool" bin/otptool
+#   PATH="$PWD/bin:$PATH" pass otp <pass-name>
+#
+# Arguments: <key-uri>
+# Returns: 0
+
+printf '%s\n' "$1" >>"$FAKE_OTPTOOL_LOG"
+echo 123456

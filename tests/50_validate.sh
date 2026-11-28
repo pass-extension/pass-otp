@@ -69,4 +69,8 @@ test_expect_success 'Fails for a secret that is not base32' '
     grep -q "base32" err
     '
 
+test_expect_success 'Ignores unknown parameters' '
+    _pass otp validate "otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&image=https%3A%2F%2Fexample.com%2Flogo.png"
+    '
+
 test_done

@@ -23,7 +23,7 @@ shellcheck:
   stage: lint
   image: koalaman/shellcheck-alpine
   script:
-    - shellcheck --shell=bash otp.bash tests/commons tests/results tests/xclip tests/*.sh
+    - shellcheck --shell=bash otp.bash tests/commons tests/results tests/xclip tests/fake-* tests/*.sh
 
 # Code tests
 

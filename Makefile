@@ -34,7 +34,7 @@ $(T):
 	@$@ $(PASS_TEST_OPTS)
 
 lint:
-	shellcheck --shell=bash ${EXT}.bash tests/commons tests/results tests/xclip tests/*.sh
+	shellcheck --shell=bash ${EXT}.bash tests/commons tests/results tests/xclip tests/fake-* tests/*.sh
 
 docs:
 	@pandoc -t man -s -o share/man/man1/pass-${EXT}.1 share/man/man1/pass-${EXT}.md

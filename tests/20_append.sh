@@ -34,7 +34,7 @@ test_expect_success 'Reads terminal input in noecho mode' '
     _pass insert -e passfile <<< "$existing" &&
     { expect <<EOD
       set timeout 30
-      spawn "$PASS" otp append passfile
+      spawn {*}{$PASS_SPAWN} otp append passfile
       expect {
         timeout { exit 1 }
         "Enter" {
@@ -61,7 +61,7 @@ test_expect_success 'Reads terminal input in echo mode' '
     {
       expect <<EOD
         set timeout 30
-        spawn "$PASS" otp append -e passfile
+        spawn {*}{$PASS_SPAWN} otp append -e passfile
         expect {
           timeout { exit 1 }
           "Enter" {
@@ -85,7 +85,7 @@ test_expect_success 'Insert secret containing lowercase letters and spaces' '
     {
       expect <<EOD
         set timeout 30
-        spawn "$PASS" otp append -s -i Example -a alice@google.com -e passfile
+        spawn {*}{$PASS_SPAWN} otp append -s -i Example -a alice@google.com -e passfile
         expect {
           timeout { exit 1 }
           "Enter" {
@@ -110,7 +110,7 @@ test_expect_success 'Prompts before overwriting key URI' '
     {
       expect <<EOD
         set timeout 30
-        spawn "$PASS" otp append -e passfile
+        spawn {*}{$PASS_SPAWN} otp append -e passfile
         expect {
           timeout { exit 1 }
           "Enter" {
@@ -139,7 +139,7 @@ test_expect_success 'Force overwrites key URI' '
     {
       expect <<EOD
         set timeout 30
-        spawn "$PASS" otp append -ef passfile
+        spawn {*}{$PASS_SPAWN} otp append -ef passfile
         expect {
           timeout { exit 1 }
           "Enter" {
