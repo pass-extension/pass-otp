@@ -377,11 +377,10 @@ cmd_otp_code() {
 
   [[ $err -ne 0 || $# -ne 1 ]] && die "Usage: $PROGRAM $COMMAND [--clip,-c] [--quiet,-q] pass-name"
 
-  local path="${1%/}"
+  local path="${1%/}" line
   otp_show "$path"
   while IFS= read -r line; do
     if [[ "$line" == otpauth://* ]]; then
-      local uri="$line"
       otp_parse_uri "$line"
       break
     fi
@@ -395,7 +394,7 @@ cmd_otp_code() {
     generator=otptool
   fi
 
-  local cmd
+  local cmd uri="$otp_uri" counter
   case "$otp_type" in
     totp)
       cmd=("$OATH" --base32)
@@ -406,7 +405,9 @@ cmd_otp_code() {
       ;;
 
     hotp)
-      local counter=$((10#$otp_counter + 1)) # base 10: a leading zero is not octal
+      counter=$((10#$otp_counter + 1)) # base 10: a leading zero is not octal
+      # Same counter for every generator: otptool reads it from the URI
+      [[ "$uri" =~ ^(.*[?\&]counter=)[0-9]+(.*)$ ]] && uri="${BASH_REMATCH[1]}$counter${BASH_REMATCH[2]}"
       cmd=("$OATH" --base32 --hotp --counter="$counter")
       [[ -n "$otp_digits" ]] && cmd+=(--digits="$otp_digits")
       ;;
@@ -425,8 +426,7 @@ cmd_otp_code() {
 
   if [[ "$otp_type" == "hotp" ]]; then
     # Increment HOTP counter in-place
-    local replaced uri=$otp_uri
-    [[ "$otp_uri" =~ ^(.*[?\&]counter=)[0-9]+(.*)$ ]] && uri="${BASH_REMATCH[1]}$counter${BASH_REMATCH[2]}"
+    local replaced
     replaced=$(otp_replace_uri "$otp_contents" "$uri")
 
     otp_insert "$path" "$replaced" "Increment HOTP counter for $path." "$quiet"
