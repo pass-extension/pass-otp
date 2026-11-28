@@ -101,7 +101,7 @@ otp_parse_uri() {
 }
 
 otp_read_uri() {
-  local uri prompt="$1" echo="$2"
+  local uri uri_again prompt="$1" echo="$2"
 
   if [[ -t 0 ]]; then
     if [[ $echo -eq 0 ]]; then
@@ -121,7 +121,7 @@ otp_read_uri() {
 }
 
 otp_read_secret() {
-  local uri prompt="$1" echo="$2" issuer accountname separator
+  local uri secret secret_again prompt="$1" echo="$2" issuer accountname separator
   [ ! "$3" = false ] && issuer="$(urlencode "$3")"
   [ ! "$4" = false ] && accountname="$(urlencode "$4")"
   [ -n "$issuer" ] && [ -n "$accountname" ] && separator=":"
@@ -134,10 +134,10 @@ otp_read_secret() {
       echo
       [[ "$secret" == "$secret_again" ]] || die "Error: the entered secrets do not match."
     else
-        read -r -p "Enter secret for $prompt: " -e secret
+      read -r -p "Enter secret for $prompt: " -e secret
     fi
   else
-      read -r secret
+    read -r secret
   fi
 
   secret=$(printf '%s' "${secret//[[:space:]]/}" | tr '[:lower:]' '[:upper:]')
@@ -217,9 +217,10 @@ cmd_otp_usage() {
     cat <<-_EOF
 Usage:
 
-    $PROGRAM $COMMAND [code] [--clip,-c] pass-name
+    $PROGRAM $COMMAND [code] [--clip,-c] [--quiet,-q] pass-name
         Generate an OTP code and optionally put it on the clipboard.
         If put on the clipboard, it will be cleared in $CLIP_TIME seconds.
+        Optionally, do not print the git output of a HOTP counter update.
 
     $PROGRAM $COMMAND insert [--force,-f] [--echo,-e]
             [[--secret, -s] [--issuer,-i issuer] [--account,-a account]]
@@ -313,7 +314,7 @@ cmd_otp_insert() {
 }
 
 cmd_otp_append() {
-  local opts force=0 echo=0 from_secret=0
+  local opts force=0 echo=0 from_secret=0 issuer account
   opts="$($GETOPT -o fesi:a: -l force,echo,secret,issuer:,account: -n "$PROGRAM" -- "$@")"
   local err=$?
   eval set -- "$opts"
@@ -440,7 +441,7 @@ cmd_otp_code() {
 }
 
 cmd_otp_uri() {
-  local qrcode=0 clip=0
+  local opts qrcode=0 clip=0 line
   opts="$($GETOPT -o cq -l clip,qrcode -n "$PROGRAM" -- "$@")"
   local err=$?
   eval set -- "$opts"
