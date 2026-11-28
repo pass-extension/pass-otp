@@ -11,9 +11,9 @@ datarootdir ?= ${prefix}/share
 mandir ?= ${datarootdir}/man
 man1dir ?= ${mandir}/man1
 bashcompdir ?= ${datarootdir}/bash-completion/completions
+zshcompdir ?= ${datarootdir}/zsh/site-functions
 
 SYSTEM_EXTENSION_DIR ?= ${libexecdir}/password-store/extensions
-ZSHCOMPDIR ?= ${datarootdir}/zsh/site-functions
 
 INSTALL ?= install
 INSTALL_DATA ?= $(INSTALL) -m 0644
@@ -25,7 +25,7 @@ all:
 
 install_share:
 	${INSTALL_DATA} -D share/bash-completion/completions/pass-${EXT} "${DESTDIR}${bashcompdir}/pass-${EXT}"
-	${INSTALL_DATA} -D share/zsh/site-functions/_pass-${EXT} "${DESTDIR}${ZSHCOMPDIR}/_pass-${EXT}"
+	${INSTALL_DATA} -D share/zsh/site-functions/_pass-${EXT} "${DESTDIR}${zshcompdir}/_pass-${EXT}"
 ifneq (,$(wildcard ./share/man/man1/pass-${EXT}.1))
 	${INSTALL_DATA} -D share/man/man1/pass-${EXT}.1 "${DESTDIR}${man1dir}/pass-${EXT}.1"
 endif
