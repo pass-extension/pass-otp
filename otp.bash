@@ -56,17 +56,15 @@ urldecode() {
 # Vars are consumed by caller
 # shellcheck disable=SC2034
 otp_parse_uri() {
-  local uri="$1"
-
-  uri="${uri//\`/%60}"
-  uri="${uri//\"/%22}"
+  local uri="$1" param
+  otp_uri="" otp_type="" otp_secret="" otp_digits="" otp_algorithm=""
+  otp_period="" otp_counter="" otp_issuer="" otp_accountname=""
 
   local pattern='^otpauth:\/\/(totp|hotp)(\/(([^:?]+)?(:([^:?]*))?)(:([0-9]+))?)?\?(.+)$'
   [[ "$uri" =~ $pattern ]] || die "Cannot parse OTP key URI"
 
   otp_uri=${BASH_REMATCH[0]}
   otp_type=${BASH_REMATCH[1]}
-  otp_label=${BASH_REMATCH[3]}
 
   otp_accountname=$(urldecode "${BASH_REMATCH[6]}")
   [[ -z $otp_accountname ]] && otp_accountname=$(urldecode "${BASH_REMATCH[4]}") || otp_issuer=$(urldecode "${BASH_REMATCH[4]}")
@@ -92,9 +90,14 @@ otp_parse_uri() {
   done
 
   [[ -z "$otp_secret" ]] && die "Invalid key URI (missing secret)"
+  [[ "$otp_secret" =~ ^[A-Za-z2-7\ ]+=*$ ]] || die "Invalid key URI (secret is not base32)"
 
   pattern='^[0-9]+$'
   [[ "$otp_type" == 'hotp' ]] && [[ ! "$otp_counter" =~ $pattern ]] && die "Invalid key URI (missing counter)"
+  [[ -z "$otp_digits" || "$otp_digits" =~ ^[1-9][0-9]*$ ]] || die "Invalid key URI (digits must be a positive number)"
+  [[ -z "$otp_period" || "$otp_period" =~ ^[1-9][0-9]*$ ]] || die "Invalid key URI (period must be a positive number)"
+  [[ -z "$otp_algorithm" || "${otp_algorithm^^}" =~ ^SHA(1|256|512)$ ]] || die "Invalid key URI (algorithm must be SHA1, SHA256 or SHA512)"
+  return 0
 }
 
 otp_read_uri() {
