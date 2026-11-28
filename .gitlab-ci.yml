@@ -65,7 +65,7 @@ fedora:
   image: fedora
   extends: .distribution
   before_script:
-    - dnf -y install make gpg pass grep git findutils diffutils oathtool expect --setopt=install_weak_deps=False
+    - dnf -y install make gpg pass grep git findutils diffutils util-linux oathtool expect --setopt=install_weak_deps=False
 
 # Code coverage deployment
 
