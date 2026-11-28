@@ -19,7 +19,7 @@ test_expect_success 'Reads terminal input in noecho mode' '
     test_pass_init &&
     expect <<EOD &&
       set timeout 30
-      spawn "$PASS" otp insert passfile
+      spawn {*}{$PASS_SPAWN} otp insert passfile
       expect {
         timeout { exit 1 }
         "Enter" {
@@ -42,7 +42,7 @@ test_expect_success 'Reads terminal input in echo mode' '
     test_pass_init &&
     expect <<EOD &&
       set timeout 30
-      spawn "$PASS" otp insert -e passfile
+      spawn {*}{$PASS_SPAWN} otp insert -e passfile
       expect {
         timeout { exit 1 }
         "Enter" {
@@ -63,7 +63,7 @@ test_expect_success 'Prompts before overwriting key URI' '
     _pass otp insert passfile <<< "$uri1" &&
     expect <<EOD &&
       set timeout 30
-      spawn "$PASS" otp insert -e passfile
+      spawn {*}{$PASS_SPAWN} otp insert -e passfile
       expect {
         timeout { exit 1 }
         "Enter" {
@@ -94,7 +94,7 @@ test_expect_success 'Prompts when inserting default pass-name from terminal' '
     test_pass_init &&
     expect <<EOD &&
       set timeout 30
-      spawn "$PASS" otp insert -e
+      spawn {*}{$PASS_SPAWN} otp insert -e
       expect {
         timeout { exit 1 }
         "Enter" {
@@ -223,7 +223,7 @@ test_expect_success 'Rejects a sneaky default pass-name before any prompt' '
     touch "$PASSWORD_STORE_DIR/../passwd.gpg" &&
     expect <<EOD
       set timeout 30
-      spawn "$PASS" otp insert -e
+      spawn {*}{$PASS_SPAWN} otp insert -e
       expect {
         timeout { exit 1 }
         "Enter" {
@@ -286,6 +286,75 @@ test_expect_success 'Fails for --secret without --issuer or --account' '
 test_expect_success 'Fails for an unknown option' '
     test_pass_init &&
     test_must_fail _pass otp insert --bogus passfile <<< "otpauth://totp/a?secret=JBSWY3DPEHPK3PXP"
+    '
+
+
+test_expect_success 'Fails when the retyped URI does not match' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    expect <<EOD &&
+      set timeout 30
+      spawn {*}{$PASS_SPAWN} otp insert passfile
+      expect {
+        timeout { exit 1 }
+        "Enter" {
+          send "$uri\r"
+          exp_continue
+        }
+        "Retype" {
+          send "${uri}x\r"
+          exp_continue
+        }
+        eof
+      }
+EOD
+    [[ ! -e "$PASSWORD_STORE_DIR/passfile.gpg" ]]
+    '
+
+test_expect_success 'Reads secret from terminal in noecho mode' '
+    secret="JBSWY3DPEHPK3PXP"
+    uri="otpauth://totp/Example:alice%40google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    expect <<EOD &&
+      set timeout 30
+      spawn {*}{$PASS_SPAWN} otp insert -s -i Example -a alice@google.com passfile
+      expect {
+        timeout { exit 1 }
+        "Enter" {
+          send "$secret\r"
+          exp_continue
+        }
+        "Retype" {
+          send "$secret\r"
+          exp_continue
+        }
+        eof
+      }
+EOD
+    [[ $(_pass show passfile) == "$uri" ]]
+    '
+
+test_expect_success 'Fails when the retyped secret does not match' '
+    test_pass_init &&
+    expect <<EOD &&
+      set timeout 30
+      spawn {*}{$PASS_SPAWN} otp insert -s -a alice passfile
+      expect {
+        timeout { exit 1 }
+        "Enter" {
+          send "JBSWY3DPEHPK3PXP\r"
+          exp_continue
+        }
+        "Retype" {
+          send "GEZDGNBVGY3TQOJQ\r"
+          exp_continue
+        }
+        eof
+      }
+EOD
+    [[ ! -e "$PASSWORD_STORE_DIR/passfile.gpg" ]]
     '
 
 test_done

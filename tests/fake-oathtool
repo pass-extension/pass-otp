@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Fake oathtool older than 2.6.5, for testing the fallbacks of 'pass otp code':
+# it cannot read the secret from stdin ('-'), else it runs the real oathtool.
+#
+# Intended use:
+#   export OATHTOOL=<real oathtool>
+#   mkdir -p bin && cp "$TESTS_HOME/fake-oathtool" bin/oathtool
+#   PATH="$PWD/bin:$PATH" pass otp <pass-name>
+#
+# Returns: 1 when the secret is '-', else the real oathtool status
+
+[[ ${!#} == - ]] && exit 1
+exec "$OATHTOOL" "$@"

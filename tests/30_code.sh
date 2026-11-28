@@ -215,4 +215,41 @@ test_expect_success 'Prints the version and the usage' '
     _pass otp help | grep -q "^Usage:"
     '
 
+test_expect_success NO_OTPTOOL 'Passes the secret as argument to oathtool older than 2.6.5' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+    inc="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=11"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    mkdir -p bin && cp "$TESTS_HOME/fake-oathtool" bin/oathtool &&
+    code=$(PATH="$PWD/bin:$PATH" _pass otp passfile) &&
+    [[ $code == "$("$OATHTOOL" --base32 --hotp --counter=11 JBSWY3DPEHPK3PXP)" ]] &&
+    [[ $(_pass otp uri passfile) == "$inc" ]]
+    '
+
+test_expect_success 'Falls back to otptool with the incremented HOTP counter' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10"
+    inc="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=11"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    rm -f "$FAKE_OTPTOOL_LOG" &&
+    mkdir -p bin && cp "$TESTS_HOME/fake-oathtool" bin/oathtool &&
+    cp "$TESTS_HOME/fake-otptool" bin/otptool &&
+    code=$(PATH="$PWD/bin:$PATH" _pass otp passfile) &&
+    [[ $code == 123456 ]] &&
+    [[ $(cat "$FAKE_OTPTOOL_LOG") == "$inc" ]] &&
+    [[ $(_pass otp uri passfile) == "$inc" ]]
+    '
+
+test_expect_success 'Fails and keeps the counter when oathtool fails' '
+    uri="otpauth://hotp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&counter=10&digits=9"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    test_must_fail _pass otp passfile 2> err &&
+    grep -q "failed to generate OTP code" err &&
+    [[ $(_pass otp uri passfile) == "$uri" ]]
+    '
+
 test_done

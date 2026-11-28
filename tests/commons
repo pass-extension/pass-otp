@@ -83,9 +83,20 @@ EXPECT="$(command -v expect)"
 OATHTOOL="$(command -v oathtool)"
 [[ -e "$EXPECT" ]] || _die "Could not find expect command"
 [[ -e "$OATHTOOL" ]] || _die "Could not find oathtool command"
+export OATHTOOL
+
+if [[ "$COVERAGE" == true ]]; then
+	PASS_SPAWN="{$KCOV} --bash-dont-parse-binary-dir {--exclude-line=esac done,clip${KCOV_EXCLUDE_LINES:+,$KCOV_EXCLUDE_LINES}}"
+	PASS_SPAWN+=" {--include-path=$PROJECT_HOME} {--exclude-path=$TESTS_HOME} {$TMP/$(basename "$0")} {$PASS}"
+else
+	PASS_SPAWN="{$PASS}"
+fi
 
 export PATH="$TESTS_HOME:$PATH"
 export FAKE_CLIPBOARD="$SHARNESS_TRASH_DIRECTORY/clipboard"
+
+export FAKE_OTPTOOL_LOG="$SHARNESS_TRASH_DIRECTORY/otptool.log"
+command -v otptool >/dev/null || test_set_prereq NO_OTPTOOL
 export PASSWORD_STORE_DIR="$SHARNESS_TRASH_DIRECTORY/test-store"
 export GIT_DIR="$PASSWORD_STORE_DIR/.git"
 export GIT_WORK_TREE="$PASSWORD_STORE_DIR"
