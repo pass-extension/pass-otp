@@ -5,9 +5,21 @@ export test_description="pass otp: code"
 cd tests
 source ./commons
 
+# Generate a TOTP code with pass otp and check it against oathtool, before or
+# after the call in case the time step changes in between
+# $1: pass-name, other arguments are given to oathtool
+test_totp() {
+	local name="$1" before code after
+	shift
+	before="$("$OATHTOOL" "$@")" &&
+		code="$(_pass otp "$name")" &&
+		after="$("$OATHTOOL" "$@")" &&
+		[[ $code == "$before" || $code == "$after" ]]
+}
+
 test_expect_success 'Fails for missing secret' '
     test_pass_init &&
-    _pass insert passfile <<< "12345"
+    _pass insert -e passfile <<< "12345" &&
     test_expect_code 1 _pass otp passfile
     '
 
@@ -16,8 +28,15 @@ test_expect_success 'Generates TOTP code' '
 
     test_pass_init &&
     _pass otp insert passfile <<< "$uri" &&
-    code=$(_pass otp passfile) &&
-    [[ ${#code} -eq 6 ]]
+    test_totp passfile --base32 --totp JBSWY3DPEHPK3PXP
+    '
+
+test_expect_success 'Generates TOTP code with algorithm, digits and period' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&algorithm=SHA256&digits=8&period=60"
+
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri" &&
+    test_totp passfile --base32 --totp=sha256 --digits=8 --time-step-size=60s JBSWY3DPEHPK3PXP
     '
 
 test_expect_success 'Generates HOTP code and increments counter' '
@@ -27,7 +46,7 @@ test_expect_success 'Generates HOTP code and increments counter' '
     test_pass_init &&
     _pass otp insert passfile <<< "$uri" &&
     code=$(_pass otp passfile) &&
-    [[ ${#code} -eq 6 ]] &&
+    [[ $code == "$("$OATHTOOL" --base32 --hotp --counter=11 JBSWY3DPEHPK3PXP)" ]] &&
     [[ $(_pass otp uri passfile) == "$inc" ]]
     '
 
