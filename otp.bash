@@ -219,14 +219,15 @@ Usage:
         If put on the clipboard, it will be cleared in $CLIP_TIME seconds.
 
     $PROGRAM $COMMAND insert [--force,-f] [--echo,-e]
-            [[--secret, -s] [--issuer,-i issuer] [--account,-a account] [--path,-p path-name]]
-            [pass-name]
+            [[--secret, -s] [--issuer,-i issuer] [--account,-a account]]
+            [--path,-p path-name | pass-name]
         Prompt for and insert a new OTP key.
 
         If 'secret' is specified, prompt for the OTP secret, assuming SHA1
         algorithm, 30-second period, and 6 OTP digits; one of 'issuer' or
         'account' is also required. Otherwise, prompt for a key URI; if
-        'pass-name' is not supplied, use the URI label.
+        'pass-name' is not supplied, use the URI label, under 'path-name' if
+        given.
 
         Optionally, echo the input. Prompt before overwriting existing URI
         unless forced. This command accepts input from stdin.
@@ -256,7 +257,7 @@ _EOF
 }
 
 cmd_otp_insert() {
-  local opts force=0 echo=0 from_secret=0
+  local opts force=0 echo=0 from_secret=0 issuer account path_prefix
   opts="$($GETOPT -o fesi:a:p: -l force,echo,secret,issuer:,account:,path: -n "$PROGRAM" -- "$@")"
   local err=$?
   eval set -- "$opts"
@@ -270,7 +271,8 @@ cmd_otp_insert() {
     --) shift; break ;;
   esac done
 
-  [[ $err -ne 0 ]] && die "Usage: $PROGRAM $COMMAND insert [--force,-f] [--echo,-e] [--secret, -s] [--issuer,-i issuer] [--account,-a account] [--path,-p path-name] [pass-name]"
+  [[ $err -ne 0 || $# -gt 1 ]] && die "Usage: $PROGRAM $COMMAND insert [--force,-f] [--echo,-e] [--secret, -s] [--issuer,-i issuer] [--account,-a account] [--path,-p path-name | pass-name]"
+  [[ -n "$path_prefix" && $# -eq 1 ]] && die "Error: --path only applies to the path built from the URI label, not to a pass-name."
 
   local prompt path uri
   if [[ $# -eq 1 ]]; then
