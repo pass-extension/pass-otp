@@ -84,9 +84,13 @@ OATHTOOL="$(command -v oathtool)"
 [[ -e "$EXPECT" ]] || _die "Could not find expect command"
 [[ -e "$OATHTOOL" ]] || _die "Could not find oathtool command"
 
+export PATH="$TESTS_HOME:$PATH"
+export FAKE_CLIPBOARD="$SHARNESS_TRASH_DIRECTORY/clipboard"
 export PASSWORD_STORE_DIR="$SHARNESS_TRASH_DIRECTORY/test-store"
 export GIT_DIR="$PASSWORD_STORE_DIR/.git"
 export GIT_WORK_TREE="$PASSWORD_STORE_DIR"
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1 # ignore the user git config
 
 test_pass_init() {
 	rm -rf "$PASSWORD_STORE_DIR"
@@ -99,3 +103,5 @@ test_pass_git_init() {
 		_pass git config user.email "Pass-Automated-Testing-Suite@zx2c4.com" &&
 		_pass git config user.name "Pass Automated Testing Suite"
 }
+
+command -v qrencode >/dev/null && test_set_prereq QRENCODE

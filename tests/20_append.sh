@@ -32,9 +32,11 @@ test_expect_success 'Reads terminal input in noecho mode' '
 
     test_pass_init &&
     _pass insert -e passfile <<< "$existing" &&
-    { expect -d <<EOD
+    { expect <<EOD
+      set timeout 30
       spawn "$PASS" otp append passfile
       expect {
+        timeout { exit 1 }
         "Enter" {
           send "$uri\r"
           exp_continue
@@ -58,8 +60,10 @@ test_expect_success 'Reads terminal input in echo mode' '
     _pass insert -e passfile <<< "$existing" &&
     {
       expect <<EOD
+        set timeout 30
         spawn "$PASS" otp append -e passfile
         expect {
+          timeout { exit 1 }
           "Enter" {
             send "$uri\r"
             exp_continue
@@ -80,8 +84,10 @@ test_expect_success 'Insert secret containing lowercase letters and spaces' '
     _pass insert -e passfile <<< "$existing" &&
     {
       expect <<EOD
+        set timeout 30
         spawn "$PASS" otp append -s -i Example -a alice@google.com -e passfile
         expect {
+          timeout { exit 1 }
           "Enter" {
             send "$secret\r"
             exp_continue
@@ -102,9 +108,11 @@ test_expect_success 'Prompts before overwriting key URI' '
     _pass insert -e passfile <<< "$existing" &&
     _pass otp append -e passfile <<< "$uri1" &&
     {
-      expect -d <<EOD
+      expect <<EOD
+        set timeout 30
         spawn "$PASS" otp append -e passfile
         expect {
+          timeout { exit 1 }
           "Enter" {
             send "$uri2\r"
             exp_continue
@@ -129,9 +137,11 @@ test_expect_success 'Force overwrites key URI' '
     _pass insert -e passfile <<< "$existing" &&
     _pass otp append -e passfile <<< "$uri1" &&
     {
-      expect -d <<EOD
+      expect <<EOD
+        set timeout 30
         spawn "$PASS" otp append -ef passfile
         expect {
+          timeout { exit 1 }
           "Enter" {
             send "$uri2\r"
             exp_continue

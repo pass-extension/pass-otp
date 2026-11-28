@@ -16,10 +16,12 @@ test_expect_success 'Reads non-terminal input' '
 test_expect_success 'Reads terminal input in noecho mode' '
     uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-    test_pass_init
-    expect <<EOD
+    test_pass_init &&
+    expect <<EOD &&
+      set timeout 30
       spawn "$PASS" otp insert passfile
       expect {
+        timeout { exit 1 }
         "Enter" {
           send "$uri\r"
           exp_continue
@@ -37,10 +39,12 @@ EOD
 test_expect_success 'Reads terminal input in echo mode' '
     uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-    test_pass_init
-    expect <<EOD
+    test_pass_init &&
+    expect <<EOD &&
+      set timeout 30
       spawn "$PASS" otp insert -e passfile
       expect {
+        timeout { exit 1 }
         "Enter" {
           send "$uri\r"
           exp_continue
@@ -55,11 +59,13 @@ test_expect_success 'Prompts before overwriting key URI' '
     uri1="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Foo"
     uri2="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Bar"
 
-    test_pass_init
-    _pass otp insert passfile <<< "$uri1" || return 1
-    expect <<EOD
+    test_pass_init &&
+    _pass otp insert passfile <<< "$uri1" &&
+    expect <<EOD &&
+      set timeout 30
       spawn "$PASS" otp insert -e passfile
       expect {
+        timeout { exit 1 }
         "Enter" {
           send "$uri2\r"
           exp_continue
@@ -77,18 +83,20 @@ EOD
 test_expect_success 'Generates default pass-name from label' '
     uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-    test_pass_init
-    _pass otp insert <<< "$uri"
+    test_pass_init &&
+    _pass otp insert <<< "$uri" &&
     [[ $(_pass show "Example/alice@google.com") == "$uri" ]]
     '
 
 test_expect_success 'Prompts when inserting default pass-name from terminal' '
     uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
 
-    test_pass_init
-    expect <<EOD
+    test_pass_init &&
+    expect <<EOD &&
+      set timeout 30
       spawn "$PASS" otp insert -e
       expect {
+        timeout { exit 1 }
         "Enter" {
           send "$uri\r"
           exp_continue
@@ -214,8 +222,10 @@ test_expect_success 'Rejects a sneaky default pass-name before any prompt' '
     test_pass_init &&
     touch "$PASSWORD_STORE_DIR/../passwd.gpg" &&
     expect <<EOD
+      set timeout 30
       spawn "$PASS" otp insert -e
       expect {
+        timeout { exit 1 }
         "Enter" {
           send "$uri\r"
           exp_continue
