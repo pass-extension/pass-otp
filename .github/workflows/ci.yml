@@ -26,7 +26,7 @@ jobs:
       - name: Install required packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pass oathtool expect kcov jq
+          sudo apt-get install -y --no-install-recommends pass oathtool expect qrencode kcov jq
 
       - name: Run the tests
         shell: bash

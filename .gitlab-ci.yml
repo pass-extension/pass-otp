@@ -31,7 +31,7 @@ tests:
   stage: tests
   image: archlinux
   before_script:
-    - pacman -Syu --noconfirm --noprogressbar make grep pass git oath-toolkit expect jq kcov
+    - pacman -Syu --noconfirm --noprogressbar make grep pass git oath-toolkit expect diffutils qrencode jq kcov
   script:
     - make tests COVERAGE=true
     - mv /tmp/tests/pass-otp/kcov kcov/
@@ -47,7 +47,7 @@ archlinux:
   image: archlinux
   extends: .distribution
   before_script:
-    - pacman -Syu --noconfirm --noprogressbar make grep pass git oath-toolkit expect
+    - pacman -Syu --noconfirm --noprogressbar make grep pass git oath-toolkit expect diffutils
 
 ubuntu:
   image: ubuntu
@@ -65,7 +65,7 @@ fedora:
   image: fedora
   extends: .distribution
   before_script:
-    - dnf -y install make gpg pass grep git findutils oathtool expect --setopt=install_weak_deps=False
+    - dnf -y install make gpg pass grep git findutils diffutils oathtool expect --setopt=install_weak_deps=False
 
 # Code coverage deployment
 
