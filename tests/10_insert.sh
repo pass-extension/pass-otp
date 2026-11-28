@@ -232,4 +232,22 @@ test_expect_success 'Rejects a sneaky default pass-name before any prompt' '
 EOD
     '
 
+test_expect_success 'Fails with more than one pass-name' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    test_must_fail _pass otp insert passfile extra <<< "$uri" &&
+    [[ ! -e "$PASSWORD_STORE_DIR/passfile.gpg" ]] &&
+    [[ ! -e "$PASSWORD_STORE_DIR/extra.gpg" ]]
+    '
+
+test_expect_success 'Fails with both --path and a pass-name' '
+    uri="otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+
+    test_pass_init &&
+    test_must_fail _pass otp insert -p totp passfile <<< "$uri" 2> err &&
+    grep -q -- "--path" err &&
+    [[ ! -e "$PASSWORD_STORE_DIR/passfile.gpg" ]]
+    '
+
 test_done
